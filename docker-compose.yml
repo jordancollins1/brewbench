@@ -1,6 +1,6 @@
 services:
   brewbench:
-    build: .
+    image: ghcr.io/jordancollins1/brewbench:latest
     restart: unless-stopped
     ports: ["1212:1212"]
     environment:
