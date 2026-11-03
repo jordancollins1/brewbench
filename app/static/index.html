@@ -42,6 +42,7 @@ button.g{background:#213336;color:var(--tx);border:1px solid var(--line)}button.
 .additive-list{display:grid;gap:6px}.additive-row{display:flex;gap:6px;align-items:center;border-top:1px solid var(--line);padding:7px 0}.additive-row input,.additive-row select{min-width:0}.additive-row .add-name{flex:1}.additive-row .add-amt{width:75px}.additive-row .add-unit{width:72px}.additive-row .add-timing{width:115px}
 .capacity-warning{font-size:12px;color:var(--red);margin:10px 0 0}.capacity-ok{font-size:12px;color:var(--green);margin:10px 0 0}
 .schedule{display:grid;gap:4px;margin:10px 0}.schedule-row{display:flex;gap:10px;align-items:center;padding:8px 10px;background:#102023;border:1px solid var(--line);border-radius:9px}.schedule-row b{min-width:52px;color:var(--gold)}.schedule-row span{flex:1}.schedule-row small{color:var(--mut)}
+.ferment-plan{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.ferment-step{background:#102023;border:1px solid var(--line);border-radius:10px;padding:10px}.ferment-step b{display:block;color:var(--blue);font-size:18px}.ferment-step span{font-size:11px;color:var(--mut)}.carb-controls{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.carb-controls label{display:grid;gap:4px;font-size:11px;color:var(--mut)}.carb-controls input,.carb-controls select{width:125px}
 .library-card{border-color:#3a5552}.library-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.library-grid label{font-size:11px;color:var(--mut);display:grid;gap:4px}.ingredient-kind{color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px}
 .quick-nav{display:flex;gap:7px;flex-wrap:wrap;margin:-6px 0 18px}.quick-nav button{background:#1b3032;color:var(--tx);border:1px solid var(--line);font-size:12px;padding:7px 10px}
 .ai-card{border-color:#8c6b3b;background:linear-gradient(145deg,#293328,#1d2827)}.ai-card h2{color:var(--gold)}.ai-card .ai-help{font-size:12px;color:var(--mut);margin:3px 0 12px}.ai-row{display:flex;gap:8px;align-items:center}.ai-row input{flex:1;min-width:180px}.ai-row button{font-size:15px;padding:11px 16px}
@@ -65,6 +66,9 @@ button.g{background:#213336;color:var(--tx);border:1px solid var(--line)}button.
 <div class="card" id=brew-plan><div class=section-head><div><h2>Brew plan</h2><p>Choose your target batch first. Equipment capacity is separate from the amount you want to make.</p>
  <div class=batch-editor><label>How much are you making?<input id=batch-size type=number min=.25 step=.25></label><label>Batch preset<select id=batch-preset onchange=applyBatchPreset()><option value="">Custom batch size</option><option value=1>1 gal test batch</option><option value=2.5>2.5 gal batch</option><option value=5>5 gal batch</option><option value=10>10 gal batch</option><option value=15>15 gal batch</option></select></label><button class=g onclick=applyBatchSize()>Update batch</button></div>
  </div><span class=eyebrow id=brewtype></span></div><div class=plan id=plan></div><div id=capacity-status></div><div id=grain-status></div></div>
+<div class="card"><div class=section-head><div><h2>Fermentation & packaging</h2><p>Recommended timing and priming sugar based on your beverage style.</p></div><span class=eyebrow id=ferment-recommendation></span></div><div class=ferment-plan id=ferment-plan></div>
+ <div class=carb-controls><label>Target carbonation (volumes)<input id=carb-volumes type=number min=0 step=.1></label><label>Beer temperature °F<input id=beer-temp type=number min=32 step=1></label><label>Priming sugar<select id=priming-sugar><option>corn sugar</option><option>table sugar</option><option>keg</option></select></label><button class=g onclick=useRecommendedCarb()>Use style recommendation</button><button onclick=applyPackaging()>Update packaging</button><span id=priming-result class=sub></span></div>
+</div>
 
 <div class="card ai-card" id=ai-builder><div class=section-head><div><h2>✨ Build a complete recipe with AI</h2><p class=ai-help>AI uses your batch size, beverage type, style, equipment, mash profile, and ingredient timing to build the full recipe.</p></div><span class=ingredient-kind>Full recipe</span></div>
  <div class=ai-row><input id=aip placeholder="Try: dry-hopped hazy IPA with oats, 6.5% ABV, 40 IBU, 5 gal"><button onclick=ai()>✨ Build full recipe</button></div>
@@ -147,6 +151,14 @@ function styleColor(style){
  const [lo,hi]=STYLES[style].srm;
  return (lo+hi)/2;
 }
+function recommendedCarb(style,type){
+ if(type=="Seltzer")return 2.6;
+ if(type=="Cider")return 2.4;
+ if(/Wheat|Hefeweizen|Saison/.test(style||""))return 3.0;
+ if(/Pilsner|Lager/.test(style||""))return 2.5;
+ if(/Stout|Porter|IPA|Pale|Brown|Amber/.test(style||""))return 2.3;
+ return 2.4;
+}
 
 const ICONS=["🍺","🍻","🍎","🍏","🍋","🫧","🌾","🌲","🔥","❄️","🌙","⭐"];
 const ADDITIVES=[
@@ -188,7 +200,7 @@ const MASH_PROFILES={
  "High attenuation":{steps:[["Mash in",10,145],["Beta-amylase rest",30,145],["Alpha-amylase rest",30,158],["Mash out",10,168]]},
  "Step mash":{steps:[["Protein rest",20,122],["Beta-amylase rest",30,145],["Saccharification rest",30,158],["Mash out",10,168]]}
 };
-const blank=()=>({name:"New recipe",style:"— No style target —",icon:"🍺",type:"Beer",units:"us",mash_profile:"Single infusion",batch_gal:5,efficiency:72,attenuation:75,boil_min:60,grains:[{name:"Pale 2-row",lb:10,ppg:37,srm:2}],hops:[{name:"Cascade",oz:1,alpha:5.5,min:60,timing:"Boil"}],additives:[],yeast:"US-05",notes:"",equipment:{system:"BIAB kettle",kettle_gal:8,boil_off:1,mash_ratio:1.5,trub_loss:.5,grain_absorption:.125}});
+const blank=()=>({name:"New recipe",style:"— No style target —",icon:"🍺",type:"Beer",units:"us",mash_profile:"Single infusion",batch_gal:5,efficiency:72,attenuation:75,boil_min:60,primary_days:14,secondary_days:0,conditioning_days:14,carb_volumes:2.4,beer_temp_f:68,priming_sugar:"corn sugar",grains:[{name:"Pale 2-row",lb:10,ppg:37,srm:2}],hops:[{name:"Cascade",oz:1,alpha:5.5,min:60,timing:"Boil"}],additives:[],yeast:"US-05",notes:"",equipment:{system:"BIAB kettle",kettle_gal:8,boil_off:1,mash_ratio:1.5,trub_loss:.5,grain_absorption:.125}});
 let r=blank(),recs=[];
 let hops=[];
 const unit=x=>r.units=="metric"?`${(x*3.78541).toFixed(1)} L`:`${x.toFixed(1)} gal`;
@@ -244,6 +256,12 @@ function draw(s){
  $("capacity-status").textContent=s.capacity_ok?`✓ Pre-boil volume fits your ${unit(s.kettle_capacity_gal)} kettle with headspace.`:`⚠️ Pre-boil volume exceeds the safe 95% capacity of your ${unit(s.kettle_capacity_gal)} kettle. Reduce batch size or boil volume.`;
  $("grain-status").className=s.grain_capacity_ok?"capacity-ok":"capacity-warning";
  $("grain-status").textContent=s.grain_capacity_ok?`✓ Grain bill fits the equipment recommendation of ${mass(s.max_grain_lb)}.`:`⚠️ Grain bill exceeds the equipment recommendation of ${mass(s.max_grain_lb)}. Consider a smaller batch or a partial mash.`;
+ $("carb-volumes").value=r.carb_volumes||2.4;$("beer-temp").value=r.beer_temp_f||68;$("priming-sugar").value=r.priming_sugar||"corn sugar";
+ const primary=r.primary_days||14,secondary=r.secondary_days||0,conditioning=r.conditioning_days||14;
+ $("ferment-plan").innerHTML=[["Primary",primary+" days","Keep on yeast until gravity is stable."],["Secondary",secondary?secondary+" days":"Skip","Use only for fruit, oak, or extended aging."],["Conditioning",conditioning+" days","Condition warm, then chill before serving."],["Priming",s.priming_sugar_g+" g","Calculated for "+s.carb_volumes+" volumes."]].map(x=>`<div class=ferment-step><b>${x[1]}</b><span>${x[0]}<br>${x[2]}</span></div>`).join("");
+ const recommended=recommendedCarb(r.style,r.type);
+ $("ferment-recommendation").textContent=`${secondary?"Secondary recommended":"Primary to package"} · ${recommended} vol recommended`;
+ $("priming-result").textContent=`${s.priming_sugar_g} g ${r.priming_sugar||"corn sugar"} for ${s.carb_volumes} volumes`;
  $("batch-size").value=r.units=="metric"?((r.batch_gal||5)*3.78541).toFixed(1):(r.batch_gal||5);
  $("batch-preset").value=["1","2.5","5","10","15"].indexOf(String(r.batch_gal))>=0?String(r.batch_gal):"";
  $("brewtype").textContent=`${r.type||"Beer"} · ${r.units=="metric"?((r.batch_gal||5)*3.78541).toFixed(1)+" L":(r.batch_gal||5)+" gal"} batch`;
@@ -258,6 +276,8 @@ function renderMash(){
  $("mashinfo").innerHTML=`<p class=sub>${p.steps.length} steps · ${p.steps.reduce((a,x)=>a+x[1],0)} minutes total</p>`;
  renderSchedule();
 }
+function useRecommendedCarb(){$("carb-volumes").value=recommendedCarb(r.style,r.type);applyPackaging()}
+function applyPackaging(){r.carb_volumes=+$("carb-volumes").value||recommendedCarb(r.style,r.type);r.beer_temp_f=+$("beer-temp").value||68;r.priming_sugar=$("priming-sugar").value;calc()}
 function scheduleEvents(){
  const events=[],p=MASH_PROFILES[r.mash_profile]||MASH_PROFILES["Single infusion"];let offset=0;
  p.steps.forEach(([label,min,temp])=>{events.push({at:offset,label:`${label} · ${temp}°F`,minutes:min});offset+=min});
@@ -273,6 +293,11 @@ function scheduleEvents(){
   if(timing=="Fermentation"||timing=="Bottling"||timing=="Packaging")events.push({at:null,label:`Add ${a.name} · ${timing}`,minutes:0});
   else events.push({at,label:`Add ${a.name} · ${timing}`,minutes:1});
  });
+ const primary=r.primary_days||14,secondary=r.secondary_days||0;
+ events.push({at:null,label:`Primary fermentation · ${primary} days`,minutes:0});
+ if(secondary)events.push({at:null,label:`Move to secondary · day ${primary}`,minutes:0});
+ if(secondary)events.push({at:null,label:`Secondary complete · ${secondary} days`,minutes:0});
+ events.push({at:null,label:`Package after conditioning · ${r.conditioning_days||14} days`,minutes:0});
  return events.sort((a,b)=>a.at-b.at);
 }
 function renderSchedule(){
@@ -297,7 +322,7 @@ function renderEd(){
  <label title="Counts toward OG"><input type=checkbox data-p="additives.${i}.fermentable" ${a.fermentable?"checked":""}> fermentable</label>
  <button class=x onclick="r.additives.splice(${i},1);renderEd()">✕</button></div>`).join("")}</div>
  <div class=row><select id=additive-preset style="flex:1">${ADDITIVES.map((a,i)=>`<option value="${i}">${a.name}</option>`).join("")}</select><button class=g onclick=addAdditive()>+ add</button></div>
- <h3 style="margin-top:14px">Yeast / culture</h3><div class=row><input class=n data-p=yeast value="${r.yeast}"></div>
+ <h3 style="margin-top:14px">Fermentation</h3><div class=row><input class=n data-p=yeast value="${r.yeast}" placeholder="Yeast / culture"><input type=number step=1 data-p=primary_days value="${r.primary_days||14}" placeholder="Primary days"><input type=number step=1 data-p=secondary_days value="${r.secondary_days||0}" placeholder="Secondary days"><input type=number step=1 data-p=conditioning_days value="${r.conditioning_days||14}" placeholder="Conditioning days"></div>
  <h3 style="margin-top:14px">Notes</h3><textarea rows=5 data-p=notes style="width:100%">${r.notes||""}</textarea>`;
  syncStyles();
  document.querySelectorAll("[data-p^='equipment.']").forEach(e=>{const k=e.dataset.p.split(".")[1];e.value=r.equipment&&r.equipment[k]!=null?r.equipment[k]:""});

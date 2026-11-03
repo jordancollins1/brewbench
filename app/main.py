@@ -37,6 +37,10 @@ def calc(r: dict) -> dict:
     pre_boil = vol + boil_off + trub
     sparge = max(0, pre_boil - mash_water + grain_total * grain_absorption)
     kettle_capacity = float(eq.get("kettle_gal") or 8)
+    carb_volumes = float(r.get("carb_volumes") or 2.4)
+    beer_temp_f = float(r.get("beer_temp_f") or 68)
+    sugar_factor = 1.0 if r.get("priming_sugar", "corn sugar") == "corn sugar" else .91
+    priming_sugar_g = max(0, (carb_volumes - (0.85 - 0.0121 * beer_temp_f)) * vol * 3.78541 * 4.0 / sugar_factor)
     max_grain = float(eq.get("max_grain_lb") or 15)
     safe_pre_boil = kettle_capacity * float(eq.get("safe_fill") or .95)
     pts = sum(float(g.get("lb") or 0) * float(g.get("ppg") or 0) for g in r.get("grains", []))
@@ -64,7 +68,8 @@ def calc(r: dict) -> dict:
             "boil_off_gal": round(boil_off, 1), "kettle_capacity_gal": round(kettle_capacity, 1),
             "max_grain_lb": round(max_grain, 1), "safe_pre_boil_gal": round(safe_pre_boil, 1),
             "capacity_ok": pre_boil <= safe_pre_boil,
-            "grain_capacity_ok": grain_total <= max_grain}
+            "grain_capacity_ok": grain_total <= max_grain,
+            "carb_volumes": round(carb_volumes, 2), "priming_sugar_g": round(priming_sugar_g, 1)}
 
 @app.post("/api/calc", dependencies=[Depends(auth)])
 def api_calc(r: dict): return calc(r)
@@ -136,9 +141,10 @@ SYS = """You are a complete homebrew recipe designer. Reply with ONLY valid JSON
 "grains":[{"name":str,"lb":num,"ppg":num,"srm":num,"timing":"Mash"}],
 "hops":[{"name":str,"oz":num,"alpha":num,"min":num,"timing":"Boil|Whirlpool|Dry hop"}],
 "additives":[{"name":str,"amount":num,"unit":"oz|lb|g|tsp|tablet|each","ppg":num,"fermentable":true,"timing":"Mash|Boil|10 min|15 min|Flameout|Whirlpool|Fermentation|Bottling|Packaging"}],
-"yeast":str,"notes":str}.
+"yeast":str,"primary_days":num,"secondary_days":num,"conditioning_days":num,
+"carb_volumes":num,"beer_temp_f":num,"priming_sugar":"corn sugar|table sugar|keg","notes":str}.
 Build the full recipe, including process additions when useful: honey, sugar, malt extract, lactose, fruit, juice, spices, yeast nutrient, Whirlfloc, finings, priming sugar, and water additions. Set fermentable false for non-fermentable process ingredients. Include fermentation temperature, duration, dry hop timing, carbonation or bottling guidance in notes.
-Respect the user's target style, beverage type, target batch size, equipment limits, and requested OG/FG/ABV/IBU. Use ppg = extract potential points/lb/gal (base malt ~36, crystal ~34, roasted ~25), and srm = grain color in Lovibond."""
+Recommend fermentation length, whether secondary is useful, a target carbonation level based on style, and packaging guidance. Do not recommend secondary for ordinary clean beers unless there is a reason such as fruit, oak, or extended aging. Respect the user's target style, beverage type, target batch size, equipment limits, and requested OG/FG/ABV/IBU. Use ppg = extract potential points/lb/gal (base malt ~36, crystal ~34, roasted ~25), and srm = grain color in Lovibond."""
 
 async def ask(messages):
     async with httpx.AsyncClient(timeout=120) as c:
