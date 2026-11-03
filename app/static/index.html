@@ -16,7 +16,7 @@ button.g{background:#213336;color:var(--tx);border:1px solid var(--line)}button.
 .hero{display:grid;grid-template-columns:190px 1fr;gap:20px;align-items:center}
 @media(max-width:640px){.hero{grid-template-columns:1fr}}
 .glass{text-align:center}.glass svg{width:150px;height:auto;filter:drop-shadow(0 10px 18px #000a)}
-.cname{font-size:13px;color:var(--mut)}.cname b{display:block;color:var(--tx);font-size:16px}
+.cname{font-size:13px;color:var(--mut)}.cname b{display:block;color:var(--tx);font-size:16px}.cname .style-color{font-size:11px;color:var(--gold);font-weight:500}
 .gauges{display:grid;gap:12px}.gh{display:flex;justify-content:space-between;font-size:13px;color:var(--mut)}
 .gh b{font-size:18px;color:var(--green)}.gh b.w{color:var(--gold)}.gh b.n{color:var(--tx)}
 .track{position:relative;height:12px;border-radius:8px;background:#0006;border:1px solid var(--line);margin:5px 0 3px}
@@ -114,6 +114,11 @@ function srmColor(s){s=Math.max(1,Math.min(40,s||1));const a=Math.floor(s),b=Mat
 const CN=[[2,"Pale straw"],[4,"Straw / gold"],[7,"Deep gold"],[10,"Amber"],[14,"Copper"],[18,"Light brown"],[24,"Brown"],[30,"Dark brown"],[99,"Near black"]];
 const cname=s=>CN.find(c=>s<=c[0])[1];
 const trackBg=`linear-gradient(90deg,${[1,5,9,13,17,21,25,30,35,40].map(n=>"#"+SRMHEX[n-1]).join(",")})`;
+function styleColor(style){
+ if(!style||!STYLES[style]||!STYLES[style].srm)return null;
+ const [lo,hi]=STYLES[style].srm;
+ return (lo+hi)/2;
+}
 
 const ICONS=["🍺","🍻","🍎","🍏","🍋","🫧","🌾","🌲","🔥","❄️","🌙","⭐"];
 const ADDITIVES=[
@@ -180,8 +185,10 @@ ${[[40,170,3],[60,150,2],[78,180,2.5],[52,120,2],[70,140,3]].map(([x,y,s],i)=>`<
 <path d="M18 14H102L92 190Q91.5 198 84 198H36Q28.5 198 28 190Z" fill=none stroke="#fff" stroke-opacity=".45" stroke-width=2.5 stroke-linejoin=round/></svg>`}
 
 function draw(s){
- const col=srmColor(s.srm);$("glass").innerHTML=glassSvg(col);$("iconname").textContent=r.icon||"🍺";$("cn").textContent=cname(s.srm);$("chex").textContent=`SRM ${s.srm} · ${col.toUpperCase()}`;
  const st=STYLES[r.style];
+ const targetSrm=styleColor(r.style), displaySrm=targetSrm||s.srm, col=srmColor(displaySrm);
+ $("glass").innerHTML=glassSvg(col);$("iconname").textContent=r.icon||"🍺";$("cn").textContent=cname(displaySrm);
+ $("chex").innerHTML=targetSrm?`Style color · SRM ${targetSrm.toFixed(1)} · ${col.toUpperCase()}<span class=style-color>Recipe SRM ${s.srm}</span>`:`SRM ${s.srm} · ${col.toUpperCase()}`;
  $("gauges").innerHTML=["srm","abv","ibu","og","fg"].map(k=>{
   const [lo,hi]=SCALE[k],v=s[k],p=x=>Math.max(0,Math.min(100,(x-lo)/(hi-lo)*100)),t=st&&st[k];
   const dec=k=="og"||k=="fg"?3:k=="abv"?1:0,fmt=x=>(+x).toFixed(dec);
