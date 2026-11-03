@@ -130,13 +130,15 @@ async def notifier():
     asyncio.create_task(loop())
 
 # ---------- AI recipe builder: LLM drafts, our math verifies ----------
-SYS = """You are a homebrew recipe designer. Reply with ONLY JSON, no prose or code fences:
-{"name":str,"batch_gal":num,"efficiency":72,"attenuation":num,"grains":[{"name":str,"lb":num,"ppg":num,"srm":num}],
-"hops":[{"name":str,"oz":num,"alpha":num,"min":num}],
-"additives":[{"name":str,"amount":num,"unit":"oz","lb":num,"ppg":num,"fermentable":true,"timing":str}],
-"yeast":str,"notes":str (mash temp/time, ferment temp, steps)}.
-Use additives for honey, sugar, malt extract, lactose, yeast nutrient, Whirlfloc, spices and finings. Set fermentable false for process additions.
-ppg = extract potential points/lb/gal (base malt ~36, crystal ~34, roasted ~25). srm = grain color in Lovibond. min = boil minutes."""
+SYS = """You are a complete homebrew recipe designer. Reply with ONLY valid JSON, no prose or code fences:
+{"name":str,"type":"Beer|Cider|Seltzer","style":str,"icon":"🍺","batch_gal":num,"efficiency":num,"attenuation":num,"boil_min":num,
+"mash_profile":"Single infusion|Brew-in-a-bag|High attenuation|Step mash",
+"grains":[{"name":str,"lb":num,"ppg":num,"srm":num,"timing":"Mash"}],
+"hops":[{"name":str,"oz":num,"alpha":num,"min":num,"timing":"Boil|Whirlpool|Dry hop"}],
+"additives":[{"name":str,"amount":num,"unit":"oz|lb|g|tsp|tablet|each","ppg":num,"fermentable":true,"timing":"Mash|Boil|10 min|15 min|Flameout|Whirlpool|Fermentation|Bottling|Packaging"}],
+"yeast":str,"notes":str}.
+Build the full recipe, including process additions when useful: honey, sugar, malt extract, lactose, fruit, juice, spices, yeast nutrient, Whirlfloc, finings, priming sugar, and water additions. Set fermentable false for non-fermentable process ingredients. Include fermentation temperature, duration, dry hop timing, carbonation or bottling guidance in notes.
+Respect the user's target style, beverage type, target batch size, equipment limits, and requested OG/FG/ABV/IBU. Use ppg = extract potential points/lb/gal (base malt ~36, crystal ~34, roasted ~25), and srm = grain color in Lovibond."""
 
 async def ask(messages):
     async with httpx.AsyncClient(timeout=120) as c:
@@ -148,7 +150,11 @@ async def ask(messages):
 
 @app.post("/api/ai", dependencies=[Depends(auth)])
 async def ai(req: dict):
-    msgs = [{"role": "user", "content": req["prompt"]}]
+    context = req.get("context", {})
+    msgs = [{"role": "user", "content": f"""Create a complete BrewBench recipe for:
+User request: {req["prompt"]}
+Current recipe context: {json.dumps(context)}
+Return every required recipe section, even if a section is empty. Do not omit equipment-aware process details."""}]
     for _ in range(3):
         text = await ask(msgs)
         rec = json.loads(re.sub(r"^```(?:json)?|```$", "", text.strip(), flags=re.M).strip())

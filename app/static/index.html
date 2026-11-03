@@ -44,6 +44,7 @@ button.g{background:#213336;color:var(--tx);border:1px solid var(--line)}button.
 .schedule{display:grid;gap:4px;margin:10px 0}.schedule-row{display:flex;gap:10px;align-items:center;padding:8px 10px;background:#102023;border:1px solid var(--line);border-radius:9px}.schedule-row b{min-width:52px;color:var(--gold)}.schedule-row span{flex:1}.schedule-row small{color:var(--mut)}
 .library-card{border-color:#3a5552}.library-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.library-grid label{font-size:11px;color:var(--mut);display:grid;gap:4px}.ingredient-kind{color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px}
 .quick-nav{display:flex;gap:7px;flex-wrap:wrap;margin:-6px 0 18px}.quick-nav button{background:#1b3032;color:var(--tx);border:1px solid var(--line);font-size:12px;padding:7px 10px}
+.ai-card{border-color:#8c6b3b;background:linear-gradient(145deg,#293328,#1d2827)}.ai-card h2{color:var(--gold)}.ai-card .ai-help{font-size:12px;color:var(--mut);margin:3px 0 12px}.ai-row{display:flex;gap:8px;align-items:center}.ai-row input{flex:1;min-width:180px}.ai-row button{font-size:15px;padding:11px 16px}
 .batch-editor{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-top:12px}.batch-editor label{display:grid;gap:5px;font-size:11px;color:var(--mut)}.batch-editor input{font-size:18px;font-weight:700;width:130px;color:var(--blue)}.batch-editor select{min-width:150px}
 @media(max-width:700px){main{padding:16px 12px 32px}.plan{grid-template-columns:1fr 1fr}}
 </style>
@@ -51,7 +52,7 @@ button.g{background:#213336;color:var(--tx);border:1px solid var(--line)}button.
 <header><h1>🍺 Brew<span>Bench</span></h1><select id=saved onchange=load()></select>
 <select id=units onchange="r.units=this.value;renderEd()"><option value="us">US units</option><option value="metric">Metric</option></select>
 <button class=g onclick=newR()>New</button><button onclick=save()>Save</button><button class=g onclick=del()>Delete</button></header>
-<nav class=quick-nav><button onclick=jump('brew-plan')>📊 Brew plan</button><button onclick=jump('equipment')>⚙ Equipment</button><button onclick=jump('ingredients')>🌾 Ingredients</button><button onclick=jump('timers')>⏱ Timers</button><button onclick=jump('hop-catalog')>🌿 Hop catalog</button></nav>
+<nav class=quick-nav><button onclick=jump('brew-plan')>📊 Brew plan</button><button onclick=jump('ai-builder')>✨ AI recipe builder</button><button onclick=jump('equipment')>⚙ Equipment</button><button onclick=jump('ingredients')>🌾 Ingredients</button><button onclick=jump('timers')>⏱ Timers</button><button onclick=jump('hop-catalog')>🌿 Hop catalog</button></nav>
 
 <div class="card hero">
  <div class=glass><div id=glass></div><div class=cname><b id=iconname></b><b id=cn></b><span id=chex></span></div></div>
@@ -65,9 +66,9 @@ button.g{background:#213336;color:var(--tx);border:1px solid var(--line)}button.
  <div class=batch-editor><label>How much are you making?<input id=batch-size type=number min=.25 step=.25></label><label>Batch preset<select id=batch-preset onchange=applyBatchPreset()><option value="">Custom batch size</option><option value=1>1 gal test batch</option><option value=2.5>2.5 gal batch</option><option value=5>5 gal batch</option><option value=10>10 gal batch</option><option value=15>15 gal batch</option></select></label><button class=g onclick=applyBatchSize()>Update batch</button></div>
  </div><span class=eyebrow id=brewtype></span></div><div class=plan id=plan></div><div id=capacity-status></div><div id=grain-status></div></div>
 
-<div class=card><h3>✨ AI recipe builder</h3><div class=row>
- <input id=aip class=n placeholder="e.g. smooth chocolatey brown ale, 5 gal, ~6% ABV, 35 IBU (uses the style target above)">
- <button onclick=ai()>Build recipe</button><span id=aistat style="color:var(--mut)"></span></div></div>
+<div class="card ai-card" id=ai-builder><div class=section-head><div><h2>✨ Build a complete recipe with AI</h2><p class=ai-help>AI uses your batch size, beverage type, style, equipment, mash profile, and ingredient timing to build the full recipe.</p></div><span class=ingredient-kind>Full recipe</span></div>
+ <div class=ai-row><input id=aip placeholder="Try: dry-hopped hazy IPA with oats, 6.5% ABV, 40 IBU, 5 gal"><button onclick=ai()>✨ Build full recipe</button></div>
+ <div id=aistat class=sub style="margin-top:9px"></div></div>
 
 <div class="card equipment-card" id=equipment><h3>⚙ Equipment profile</h3><p class=sub>Select your system to load realistic defaults, then fine-tune them for your setup.</p>
   <div class=row><label class=lbl>Equipment preset<select id=equipment-preset onchange=applyEquipmentPreset() style="width:100%"></select></label></div>
@@ -349,9 +350,10 @@ function load(){const x=recs.find(x=>x.id==$("saved").value);if(x){r={...blank()
 function newR(){r=blank();renderEd()}
 async function save(){const x=await api("recipes","POST",r);r.id=x.id;await refresh();$("saved").value=r.id}
 async function del(){if(r.id&&confirm("Delete this recipe?")){await api("recipes/"+r.id,"DELETE");newR();refresh()}}
-async function ai(){const st=STYLES[r.style];let p=$("aip").value.trim();if(!p&&!st)return;
+async function ai(){const st=STYLES[r.style];let p=$("aip").value.trim();if(!p&&!st){$("aistat").textContent="Describe the recipe you want or select a style first.";return}
  if(st)p+=` Target style: ${r.style} — OG ${st.og.join("-")}, FG ${st.fg.join("-")}, ABV ${st.abv.join("-")}%, IBU ${st.ibu.join("-")}, SRM ${st.srm.join("-")}.`;
- $("aistat").textContent="brewing ideas…";try{const x=await api("ai","POST",{prompt:p});delete x.stats;r={...blank(),...x,style:r.style};renderEd();$("aistat").textContent="done · numbers verified by calculator"}catch(e){$("aistat").textContent="failed — check ANTHROPIC_API_KEY"}}
+ const context={type:r.type,style:r.style,batch_gal:r.batch_gal,efficiency:r.efficiency,attenuation:r.attenuation,boil_min:r.boil_min,mash_profile:r.mash_profile,equipment:r.equipment};
+ $("aistat").textContent="Building grains, hops, additives, mash, fermentation, and packaging…";try{const x=await api("ai","POST",{prompt:p,context});delete x.stats;r={...blank(),...x,style:r.style,type:x.type||r.type,equipment:{...blank().equipment,...(x.equipment||r.equipment)}};renderEd();$("aistat").textContent="Complete recipe built · review the generated schedule, then save it"}catch(e){$("aistat").textContent="Could not build recipe — verify ANTHROPIC_API_KEY and server logs"}}
 
 /* timers */
 $("chips").innerHTML=[["Mash",60],["Boil",60],["Hops @15",15],["Hops @5",5],["Whirlpool",20]].map(([l,m])=>`<button class=g onclick="addT('${l}',${m})">${l} ${m}m</button>`).join("");
