@@ -110,7 +110,9 @@ def timers(): return {"now": time.time(), "timers": [dict(t) for t in db.execute
 
 @app.post("/api/timers", dependencies=[Depends(auth)])
 def add_timer(t: dict):
-    db.execute("INSERT INTO timers(label,end_ts) VALUES(?,?)", (t["label"], time.time() + float(t["minutes"]) * 60)); db.commit()
+    delay = float(t.get("delay_minutes") or 0)
+    db.execute("INSERT INTO timers(label,end_ts) VALUES(?,?)",
+               (t["label"], time.time() + delay * 60 + float(t["minutes"]) * 60)); db.commit()
 
 @app.delete("/api/timers/{tid}", dependencies=[Depends(auth)])
 def del_timer(tid: int): db.execute("DELETE FROM timers WHERE id=?", (tid,)); db.commit()

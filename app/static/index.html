@@ -41,6 +41,7 @@ button.g{background:#213336;color:var(--tx);border:1px solid var(--line)}button.
 .equipment-note{font-size:12px;color:var(--mut);margin:4px 0 12px}.equipment-limits{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.limit{background:#102023;border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:11px;color:var(--mut)}.limit b{display:block;color:var(--blue);font-size:15px}
 .additive-list{display:grid;gap:6px}.additive-row{display:flex;gap:6px;align-items:center;border-top:1px solid var(--line);padding:7px 0}.additive-row input,.additive-row select{min-width:0}.additive-row .add-name{flex:1}.additive-row .add-amt{width:75px}.additive-row .add-unit{width:72px}.additive-row .add-timing{width:115px}
 .capacity-warning{font-size:12px;color:var(--red);margin:10px 0 0}.capacity-ok{font-size:12px;color:var(--green);margin:10px 0 0}
+.schedule{display:grid;gap:4px;margin:10px 0}.schedule-row{display:flex;gap:10px;align-items:center;padding:8px 10px;background:#102023;border:1px solid var(--line);border-radius:9px}.schedule-row b{min-width:52px;color:var(--gold)}.schedule-row span{flex:1}.schedule-row small{color:var(--mut)}
 .library-card{border-color:#3a5552}.library-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.library-grid label{font-size:11px;color:var(--mut);display:grid;gap:4px}.ingredient-kind{color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px}
 .quick-nav{display:flex;gap:7px;flex-wrap:wrap;margin:-6px 0 18px}.quick-nav button{background:#1b3032;color:var(--tx);border:1px solid var(--line);font-size:12px;padding:7px 10px}
 @media(max-width:700px){main{padding:16px 12px 32px}.plan{grid-template-columns:1fr 1fr}}
@@ -89,7 +90,8 @@ button.g{background:#213336;color:var(--tx);border:1px solid var(--line)}button.
 <div class=two>
  <div class=card id=ed></div>
  <div class=card id=timers><h3>⏱ Brew-day timers</h3>
-  <div id=mashsteps></div><button class=g onclick=startMash()>Start mash profile</button>
+  <div class=section-head><div><h2>Schedule</h2><p>Generated from your mash profile and every timed ingredient.</p></div><button onclick=startBrewSchedule()>Start full schedule</button></div>
+  <div id=schedule></div>
   <div class=chips id=chips></div>
   <div class=row><input id=tl class=n placeholder="Label"><input id=tm type=number placeholder="min"><button onclick=addT()>Start</button></div>
   <div id=tlist></div></div>
@@ -246,8 +248,29 @@ function renderMash(){
  $("mashprofile").innerHTML=Object.keys(MASH_PROFILES).map(x=>`<option ${x==r.mash_profile?"selected":""}>${x}</option>`).join("");
  $("mashsteps").innerHTML=p.steps.map(([name,min,temp])=>`<div class=step><b>${min} min</b><span>${name}</span><small>${r.units=="metric"?Math.round((temp-32)*5/9)+"°C":temp+"°F"}</small></div>`).join("");
  $("mashinfo").innerHTML=`<p class=sub>${p.steps.length} steps · ${p.steps.reduce((a,x)=>a+x[1],0)} minutes total</p>`;
+ renderSchedule();
 }
-function startMash(){const p=MASH_PROFILES[r.mash_profile]||MASH_PROFILES["Single infusion"];p.steps.forEach(([label,min])=>addT(label,min));}
+function scheduleEvents(){
+ const events=[],p=MASH_PROFILES[r.mash_profile]||MASH_PROFILES["Single infusion"];let offset=0;
+ p.steps.forEach(([label,min,temp])=>{events.push({at:offset,label:`${label} · ${temp}°F`,minutes:min});offset+=min});
+ (r.grains||[]).filter(g=>g.timing&&g.timing!="Mash").forEach(g=>events.push({at:0,label:`Add grain: ${g.name} · ${g.timing}`,minutes:1}));
+ events.push({at:offset,label:"Sparge / drain",minutes:10});offset+=10;
+ const boilStart=offset;events.push({at:boilStart,label:`Start ${r.boil_min||60} min boil`,minutes:+r.boil_min||60});
+ (r.hops||[]).filter(h=>h.timing!="Dry hop"&&h.min>0).forEach(h=>{
+  const at=boilStart+Math.max(0,(+r.boil_min||60)-(+h.min||0));
+  events.push({at,label:`Add hop: ${h.name} (${h.oz} oz, ${h.alpha}% α)`,minutes:1});
+ });
+ (r.additives||[]).forEach(a=>{
+  const timing=a.timing||"Boil",at=timing=="10 min"?boilStart+(+r.boil_min||60)-10:timing=="15 min"?boilStart+(+r.boil_min||60)-15:timing=="Flameout"?boilStart+(+r.boil_min||60):timing=="Whirlpool"?boilStart+(+r.boil_min||60)+5:timing=="Mash"?0:boilStart;
+  if(timing=="Fermentation"||timing=="Bottling"||timing=="Packaging")events.push({at:null,label:`Add ${a.name} · ${timing}`,minutes:0});
+  else events.push({at,label:`Add ${a.name} · ${timing}`,minutes:1});
+ });
+ return events.sort((a,b)=>a.at-b.at);
+}
+function renderSchedule(){
+ const events=scheduleEvents();$("schedule").innerHTML=`<div class=schedule>${events.map(e=>`<div class=schedule-row><b>${e.at==null?"Later":e.at<60?`${e.at}m`:`${Math.floor(e.at/60)}h ${e.at%60}m`}</b><span>${e.label}</span><small>${e.minutes?e.minutes+" min":"process step"}</small></div>`).join("")}</div>`;
+}
+async function startBrewSchedule(){for(const e of scheduleEvents().filter(e=>e.at!=null))await api("timers","POST",{label:e.label,minutes:e.minutes||1,delay_minutes:e.at});tick()}
 
 function renderEd(){
  const shown=(k,v)=>r.units=="metric"&&k=="lb"?(v*.453592).toFixed(2):r.units=="metric"&&k=="oz"?(v*28.3495).toFixed(1):v;
@@ -293,7 +316,7 @@ document.addEventListener("change",e=>{const p=e.target.dataset.p;if(!p)return;c
  if(e.target.dataset.unit=="volume"&&r.units=="metric")value/=3.78541;
  if(e.target.dataset.unit=="lb"&&r.units=="metric")value/=.453592;
  if(e.target.dataset.unit=="oz"&&r.units=="metric")value/=28.3495;
- o[last]=value;if(p.indexOf("equipment.")===0)renderEquipment();calc()});
+ o[last]=value;if(p.indexOf("equipment.")===0)renderEquipment();renderSchedule();calc()});
 function addAdditive(){
  const a=ADDITIVES[+$("additive-preset").value];
  r.additives.push({...a,amount:a.unit=="tablet"?1:a.unit=="g"?4:1,lb:a.ppg?((a.unit=="lb"?1:0)) : 0});
