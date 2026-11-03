@@ -1,0 +1,12 @@
+services:
+  brewbench:
+    build: .
+    restart: unless-stopped
+    ports: ["1212:1212"]
+    environment:
+      PORT: 1212
+      API_TOKEN: change-me          # login password for the web UI
+      ANTHROPIC_API_KEY: sk-ant-... # for the AI recipe builder
+      MODEL: claude-sonnet-5-5
+      NTFY_URL: ""                  # optional, e.g. https://ntfy.sh/my-brew-topic
+    volumes: ["./data:/data"]

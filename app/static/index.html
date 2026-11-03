@@ -1,0 +1,276 @@
+<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
+<title>BrewBench</title>
+<style>
+:root{--bg:#0e1517;--card:#162124;--card2:#1b2a2d;--line:#2c4144;--tx:#edf4ed;--mut:#91a7a4;--gold:#f3b35b;--green:#83d6a0;--blue:#8bc9e6;--red:#ef8c7c}
+*{box-sizing:border-box}body{margin:0;font:14px/1.45 Inter,ui-sans-serif,system-ui,sans-serif;color:var(--tx);min-height:100vh;background:radial-gradient(1100px 600px at 10% -15%,#20444a,var(--bg) 62%)}
+main{max-width:1180px;margin:auto;padding:24px 24px 44px}
+header{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:22px}
+header h1{font-size:24px;margin:0 auto 0 0;letter-spacing:.5px}header h1 span{color:var(--gold)}
+header:before{content:"BREW DAY WORKSPACE";display:block;width:100%;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--green);margin-bottom:-4px}
+.card{background:linear-gradient(145deg,#1b2a2d,var(--card));border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px;box-shadow:0 12px 30px #0004}
+h3{margin:0 0 10px;font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--mut)}
+input,select,textarea,button{font:inherit;color:var(--tx);background:#122023;border:1px solid var(--line);border-radius:10px;padding:9px 11px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--gold)}
+button{cursor:pointer;background:var(--gold);color:#14201f;border:0;font-weight:700}button:hover{filter:brightness(1.08);transform:translateY(-1px)}
+button.g{background:#213336;color:var(--tx);border:1px solid var(--line)}button.x{background:none;color:var(--mut);padding:4px 8px}
+.hero{display:grid;grid-template-columns:190px 1fr;gap:20px;align-items:center}
+@media(max-width:640px){.hero{grid-template-columns:1fr}}
+.glass{text-align:center}.glass svg{width:150px;height:auto;filter:drop-shadow(0 10px 18px #000a)}
+.cname{font-size:13px;color:var(--mut)}.cname b{display:block;color:var(--tx);font-size:16px}
+.gauges{display:grid;gap:12px}.gh{display:flex;justify-content:space-between;font-size:13px;color:var(--mut)}
+.gh b{font-size:18px;color:var(--green)}.gh b.w{color:var(--gold)}.gh b.n{color:var(--tx)}
+.track{position:relative;height:12px;border-radius:8px;background:#0006;border:1px solid var(--line);margin:5px 0 3px}
+.band{position:absolute;top:-1px;bottom:-1px;border-radius:8px;background:#6fcf7c40;border:1px solid #6fcf7caa}
+.needle{position:absolute;top:-6px;width:4px;height:22px;margin-left:-2px;border-radius:3px;background:#fff;box-shadow:0 0 8px #fff9;transition:left .5s}
+.gs{display:flex;justify-content:space-between;font-size:11px;color:var(--mut)}
+.row{display:flex;gap:6px;margin:6px 0;flex-wrap:wrap;align-items:center}
+.row input{width:80px}.row input.n{width:170px;flex:1;min-width:120px}
+.lbl{font-size:11px;color:var(--mut);width:100%;display:flex;gap:6px}.two{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}
+@media(max-width:700px){.two{grid-template-columns:1fr}}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.trow{display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1px solid var(--line)}
+.time{font:600 26px ui-monospace,monospace;min-width:90px;color:var(--gold)}.time.d{color:var(--ok)}.trow span.l{flex:1}
+@keyframes up{from{transform:translateY(0);opacity:.7}to{transform:translateY(-110px);opacity:0}}
+.bub{animation:up 4s infinite linear}
+.eyebrow{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:1.4px;margin-bottom:3px}.sub{color:var(--mut);margin:0}
+.plan{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric{background:#102023;border:1px solid var(--line);border-radius:12px;padding:12px}.metric b{display:block;font-size:20px;color:var(--blue)}.metric span{font-size:11px;color:var(--mut)}
+.section-head{display:flex;justify-content:space-between;align-items:start;gap:12px;margin-bottom:14px}.section-head h2{font-size:18px;margin:0}.section-head p{font-size:12px;color:var(--mut);margin:3px 0 0}
+.icon-picker{display:flex;gap:6px;flex-wrap:wrap}.icon-picker button{font-size:21px;padding:5px 9px;background:#102023;border:1px solid var(--line)}.icon-picker button.selected{border-color:var(--gold);background:#314238}
+.catalog{display:grid;grid-template-columns:1fr 1fr;gap:8px}.catalog-row{display:flex;align-items:center;gap:8px;padding:8px;background:#102023;border:1px solid var(--line);border-radius:10px}.catalog-row span:first-child{flex:1}.catalog-row small{color:var(--mut)}
+.step{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}.step b{color:var(--gold);min-width:52px}.step span{flex:1}
+.equipment-note{font-size:12px;color:var(--mut);margin:4px 0 12px}
+.additive-list{display:grid;gap:6px}.additive-row{display:flex;gap:6px;align-items:center;border-top:1px solid var(--line);padding:7px 0}.additive-row input,.additive-row select{min-width:0}.additive-row .add-name{flex:1}.additive-row .add-amt{width:75px}.additive-row .add-unit{width:72px}.additive-row .add-timing{width:115px}
+.capacity-warning{font-size:12px;color:var(--red);margin:10px 0 0}.capacity-ok{font-size:12px;color:var(--green);margin:10px 0 0}
+@media(max-width:700px){main{padding:16px 12px 32px}.plan{grid-template-columns:1fr 1fr}}
+</style>
+<main>
+<header><h1>🍺 Brew<span>Bench</span></h1><select id=saved onchange=load()></select>
+<select id=units onchange="r.units=this.value;renderEd()"><option value="us">US units</option><option value="metric">Metric</option></select>
+<button class=g onclick=newR()>New</button><button onclick=save()>Save</button><button class=g onclick=del()>Delete</button></header>
+
+<div class="card hero">
+ <div class=glass><div id=glass></div><div class=cname><b id=iconname></b><b id=cn></b><span id=chex></span></div></div>
+ <div>
+  <div class=row><select id=style onchange="r.style=this.value;calc()" style="flex:1"></select></div>
+  <div class=gauges id=gauges></div>
+ </div>
+</div>
+
+<div class="card"><div class=section-head><div><h2>Brew plan</h2><p>Water and process volumes calculated from your equipment profile.</p></div><span class=eyebrow id=brewtype></span></div><div class=plan id=plan></div><div id=capacity-status></div></div>
+
+<div class=card><h3>✨ AI recipe builder</h3><div class=row>
+ <input id=aip class=n placeholder="e.g. smooth chocolatey brown ale, 5 gal, ~6% ABV, 35 IBU (uses the style target above)">
+ <button onclick=ai()>Build recipe</button><span id=aistat style="color:var(--mut)"></span></div></div>
+
+<div class="card equipment-card"><h3>⚙ Equipment profile</h3><p class=sub>Select your system to load realistic defaults, then fine-tune them for your setup.</p>
+  <div class=row><label class=lbl>Equipment preset<select id=equipment-preset onchange=applyEquipmentPreset() style="width:100%"></select></label></div>
+  <p class=equipment-note id=equipment-description></p>
+  <div class=row><label class=lbl>System<select data-p=equipment.system style="width:100%"><option>BIAB kettle</option><option>3-vessel system</option><option>Extract + steeping</option><option>Electric all-in-one</option></select></label></div>
+  <div class=row><label class=lbl>Kettle capacity<input type=number step=any data-p=equipment.kettle_gal value=8></label><label class=lbl>Boil-off / hour<input type=number step=any data-p=equipment.boil_off value=1></label></div>
+  <div class=row><label class=lbl>Mash ratio (qt/lb)<input type=number step=any data-p=equipment.mash_ratio value=1.5></label><label class=lbl>Trub loss (gal)<input type=number step=any data-p=equipment.trub_loss value=.5></label></div>
+  <div class=row><label class=lbl>Grain absorption (gal/lb)<input type=number step=any data-p=equipment.grain_absorption value=.125></label></div>
+</div>
+<div class=two>
+ <div class=card id=ed></div>
+ <div class=card><h3>⏱ Brew-day timers</h3>
+  <div id=mashsteps></div><button class=g onclick=startMash()>Start mash profile</button>
+  <div class=chips id=chips></div>
+  <div class=row><input id=tl class=n placeholder="Label"><input id=tm type=number placeholder="min"><button onclick=addT()>Start</button></div>
+  <div id=tlist></div></div>
+</div>
+<div class=two>
+ <div class=card><h3>🌿 Hop catalog</h3><p class=sub>Defaults are editable and are used when adding hops to recipes.</p><div class=catalog id=hopcatalog></div>
+  <div class=row><input id=hn class=n placeholder="New hop name"><input id=ha type=number step=any placeholder="α%"><button onclick=saveHop()>Add hop</button></div>
+ </div>
+ <div class=card><h3>🥣 Mash profile</h3><p class=sub>Choose a profile that matches your equipment. Steps generate timers.</p><select id=mashprofile onchange="r.mash_profile=this.value;renderMash()" style="width:100%"></select><div id=mashinfo></div></div>
+</div>
+</main>
+<script>
+let T=localStorage.t||"change-me";localStorage.t=T;
+const api=(p,m="GET",b)=>fetch("/api/"+p,{method:m,headers:{"X-Token":T,"Content-Type":"application/json"},body:b&&JSON.stringify(b)}).then(x=>{if(x.status==401){delete localStorage.t;location.reload()}return x.json()});
+const $=id=>document.getElementById(id);
+
+/* BJCP-style targets: og,fg,abv,ibu,srm = [lo,hi] */
+const STYLES={
+"— No style target —":null,
+"American Pale Ale":{og:[1.045,1.060],fg:[1.010,1.015],abv:[4.5,6.2],ibu:[30,50],srm:[5,10]},
+"American IPA":{og:[1.056,1.070],fg:[1.008,1.014],abv:[5.5,7.5],ibu:[40,70],srm:[6,14]},
+"American Amber Ale":{og:[1.045,1.060],fg:[1.010,1.015],abv:[4.5,6.2],ibu:[25,40],srm:[10,17]},
+"American Brown Ale":{og:[1.045,1.060],fg:[1.010,1.016],abv:[4.3,6.2],ibu:[20,30],srm:[18,35]},
+"Blonde Ale":{og:[1.038,1.054],fg:[1.008,1.013],abv:[3.8,5.5],ibu:[15,28],srm:[3,6]},
+"German Pilsner":{og:[1.044,1.050],fg:[1.008,1.013],abv:[4.4,5.2],ibu:[22,40],srm:[2,5]},
+"Hefeweizen":{og:[1.044,1.052],fg:[1.010,1.014],abv:[4.3,5.6],ibu:[8,15],srm:[2,6]},
+"Saison":{og:[1.048,1.065],fg:[1.002,1.008],abv:[3.5,9.5],ibu:[20,35],srm:[5,14]},
+"Robust Porter":{og:[1.048,1.065],fg:[1.012,1.016],abv:[4.8,6.5],ibu:[25,50],srm:[22,40]},
+"Dry Irish Stout":{og:[1.036,1.044],fg:[1.007,1.011],abv:[4,4.5],ibu:[25,45],srm:[25,40]},
+"Belgian Tripel":{og:[1.075,1.085],fg:[1.008,1.014],abv:[7.5,9.5],ibu:[20,40],srm:[4.5,7]},
+"Imperial Stout":{og:[1.075,1.115],fg:[1.018,1.030],abv:[8,12],ibu:[50,90],srm:[30,40]}};
+const SCALE={og:[1.030,1.120],fg:[1.000,1.035],abv:[0,12],ibu:[0,100],srm:[0,40]};
+const LBL={og:"Original gravity",fg:"Final gravity",abv:"ABV %",ibu:"Bitterness (IBU)",srm:"Color (SRM)"};
+const SRMHEX="FFE699 FFD878 FFCA5A FFBF42 FBB123 F8A600 F39C00 EA8F00 E58500 DE7C00 D77200 CF6900 CB6200 C35900 BB5100 B54C00 B04500 A63E00 A13700 9B3200 952D00 8E2900 882300 821E00 7B1A00 771900 701400 6A0E00 660D00 5E0B00 5A0A02 560A05 520907 4C0505 470606 440607 3F0708 3B0607 3A070B 36080A".split(" ");
+function srmColor(s){s=Math.max(1,Math.min(40,s||1));const a=Math.floor(s),b=Math.min(40,a+1),f=s-a,
+ c=i=>[0,2,4].map(k=>parseInt(SRMHEX[i-1].substr(k,2),16));const x=c(a),y=c(b);
+ return "#"+x.map((v,i)=>Math.round(v+(y[i]-v)*f).toString(16).padStart(2,"0")).join("")}
+const CN=[[2,"Pale straw"],[4,"Straw / gold"],[7,"Deep gold"],[10,"Amber"],[14,"Copper"],[18,"Light brown"],[24,"Brown"],[30,"Dark brown"],[99,"Near black"]];
+const cname=s=>CN.find(c=>s<=c[0])[1];
+const trackBg=`linear-gradient(90deg,${[1,5,9,13,17,21,25,30,35,40].map(n=>"#"+SRMHEX[n-1]).join(",")})`;
+
+const ICONS=["🍺","🍻","🍎","🍏","🍋","🫧","🌾","🌲","🔥","❄️","🌙","⭐"];
+const ADDITIVES=[
+ {name:"Honey",unit:"oz",ppg:35,fermentable:true,timing:"Flameout"},
+ {name:"Table sugar",unit:"oz",ppg:46,fermentable:true,timing:"Boil"},
+ {name:"Dextrose / corn sugar",unit:"oz",ppg:46,fermentable:true,timing:"Boil"},
+ {name:"Light DME",unit:"oz",ppg:44,fermentable:true,timing:"Boil"},
+ {name:"Lactose",unit:"oz",ppg:35,fermentable:false,timing:"Boil"},
+ {name:"Maple syrup",unit:"oz",ppg:36,fermentable:true,timing:"Flameout"},
+ {name:"Yeast nutrient",unit:"g",ppg:0,fermentable:false,timing:"10 min"},
+ {name:"Whirlfloc tablet",unit:"tablet",ppg:0,fermentable:false,timing:"10 min"},
+ {name:"Irish moss",unit:"tsp",ppg:0,fermentable:false,timing:"15 min"},
+ {name:"Pectic enzyme",unit:"tsp",ppg:0,fermentable:false,timing:"Fermentation"}
+];
+const EQUIPMENT={
+ "BrewZilla Gen 4 35L":{system:"Electric all-in-one",kettle_gal:9.2,boil_off:.9,mash_ratio:1.5,trub_loss:.5,grain_absorption:.125,description:"35 L recirculating all-in-one system with a typical 0.9 gal/hour boil-off."},
+ "BrewZilla Gen 4 65L":{system:"Electric all-in-one",kettle_gal:17.2,boil_off:1.2,mash_ratio:1.5,trub_loss:.75,grain_absorption:.125,description:"65 L recirculating all-in-one system for larger batches and high-gravity brews."},
+ "Grainfather G30":{system:"Electric all-in-one",kettle_gal:8.0,boil_off:.9,mash_ratio:1.5,trub_loss:.5,grain_absorption:.125,description:"30 L all-in-one system with recirculation and overflow pipe."},
+ "Grainfather G40":{system:"Electric all-in-one",kettle_gal:11.0,boil_off:1.0,mash_ratio:1.5,trub_loss:.5,grain_absorption:.125,description:"40 L all-in-one brewing system with recirculating mash."},
+ "Anvil Foundry 10.5":{system:"Electric all-in-one",kettle_gal:10.5,boil_off:1.0,mash_ratio:1.5,trub_loss:.5,grain_absorption:.125,description:"10.5 gallon all-in-one system; supports standard and recirculating mash workflows."},
+ "Blichmann BrewEasy":{system:"Electric all-in-one",kettle_gal:10.0,boil_off:1.0,mash_ratio:1.5,trub_loss:.5,grain_absorption:.125,description:"Two-vessel recirculating system with continuous sparge-style operation."},
+ "BIAB 8 gal kettle":{system:"BIAB kettle",kettle_gal:8,boil_off:1.0,mash_ratio:2.0,trub_loss:.5,grain_absorption:.125,description:"Single-vessel brew-in-a-bag setup with full-volume mash as the default."},
+ "3-vessel 10 gal system":{system:"3-vessel system",kettle_gal:10,boil_off:1.0,mash_ratio:1.5,trub_loss:.5,grain_absorption:.125,description:"Traditional hot liquor tank, mash tun, and boil kettle arrangement."},
+ "Extract / steeping":{system:"Extract + steeping",kettle_gal:5,boil_off:.75,mash_ratio:1.5,trub_loss:.25,grain_absorption:.05,description:"Extract-based setup with a smaller steeping grain volume."}
+};
+const MASH_PROFILES={
+ "Single infusion":{steps:[["Mash in",10,152],["Saccharification rest",60,152],["Mash out",10,168]]},
+ "Brew-in-a-bag":{steps:[["Mash in",10,152],["Full conversion rest",60,152],["Lift and drain",15,168]]},
+ "High attenuation":{steps:[["Mash in",10,145],["Beta-amylase rest",30,145],["Alpha-amylase rest",30,158],["Mash out",10,168]]},
+ "Step mash":{steps:[["Protein rest",20,122],["Beta-amylase rest",30,145],["Saccharification rest",30,158],["Mash out",10,168]]}
+};
+const blank=()=>({name:"New recipe",style:"— No style target —",icon:"🍺",type:"Beer",units:"us",mash_profile:"Single infusion",batch_gal:5,efficiency:72,attenuation:75,boil_min:60,grains:[{name:"Pale 2-row",lb:10,ppg:37,srm:2}],hops:[{name:"Cascade",oz:1,alpha:5.5,min:60}],additives:[],yeast:"US-05",notes:"",equipment:{system:"BIAB kettle",kettle_gal:8,boil_off:1,mash_ratio:1.5,trub_loss:.5,grain_absorption:.125}});
+let r=blank(),recs=[];
+let hops=[];
+const unit=x=>r.units=="metric"?`${(x*3.78541).toFixed(1)} L`:`${x.toFixed(1)} gal`;
+const mass=(x)=>r.units=="metric"?`${(x*.453592).toFixed(2)} kg`:`${x.toFixed(2)} lb`;
+function equipmentPreset(){
+ return Object.keys(EQUIPMENT).find(name=>{
+  const p=EQUIPMENT[name],e=r.equipment||{};
+  return p.system==e.system&&p.kettle_gal==e.kettle_gal&&p.boil_off==e.boil_off&&p.mash_ratio==e.mash_ratio&&p.trub_loss==e.trub_loss;
+ })||"Custom equipment";
+}
+function renderEquipment(){
+ const names=["Custom equipment",...Object.keys(EQUIPMENT)];
+ $("equipment-preset").innerHTML=names.map(name=>`<option ${name==equipmentPreset()?"selected":""}>${name}</option>`).join("");
+ const preset=EQUIPMENT[equipmentPreset()];
+ $("equipment-description").textContent=preset?preset.description:"Custom profile. Adjust the values below for your hardware.";
+}
+function applyEquipmentPreset(){
+ const preset=EQUIPMENT[$("equipment-preset").value];
+ if(!preset)return;
+ r.equipment={...r.equipment,...preset};
+ renderEd();
+}
+
+function glassSvg(c){return `<svg viewBox="0 0 120 210"><defs>
+<clipPath id=cp><path d="M18 14H102L92 190Q91.5 198 84 198H36Q28.5 198 28 190Z"/></clipPath>
+<linearGradient id=sh x1=0 x2=1><stop offset=0 stop-color="#fff" stop-opacity=".28"/><stop offset=.3 stop-color="#fff" stop-opacity=".02"/><stop offset=.8 stop-color="#000" stop-opacity=".12"/><stop offset=1 stop-color="#000" stop-opacity=".35"/></linearGradient>
+<radialGradient id=gl cx=.5 cy=.75 r=.7><stop offset=0 stop-color="#fff" stop-opacity=".30"/><stop offset=1 stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
+<g clip-path="url(#cp)"><rect x=0 y=40 width=120 height=170 fill="${c}"/><rect x=0 y=40 width=120 height=170 fill="url(#gl)"/>
+${[[40,170,3],[60,150,2],[78,180,2.5],[52,120,2],[70,140,3]].map(([x,y,s],i)=>`<circle class=bub style="animation-delay:${i*.8}s" cx=${x} cy=${y} r=${s} fill="#fff" fill-opacity=".5"/>`).join("")}
+<path d="M10 14H110V40Q100 48 90 40T70 40T50 40T30 40T10 40Z" fill="#fff6e0"/><rect x=10 y=8 width=100 height=12 rx=6 fill="#fffaf0"/>
+<rect x=0 y=0 width=120 height=210 fill="url(#sh)"/></g>
+<path d="M18 14H102L92 190Q91.5 198 84 198H36Q28.5 198 28 190Z" fill=none stroke="#fff" stroke-opacity=".45" stroke-width=2.5 stroke-linejoin=round/></svg>`}
+
+function draw(s){
+ const col=srmColor(s.srm);$("glass").innerHTML=glassSvg(col);$("iconname").textContent=r.icon||"🍺";$("cn").textContent=cname(s.srm);$("chex").textContent=`SRM ${s.srm} · ${col.toUpperCase()}`;
+ const st=STYLES[r.style];
+ $("gauges").innerHTML=["srm","abv","ibu","og","fg"].map(k=>{
+  const [lo,hi]=SCALE[k],v=s[k],p=x=>Math.max(0,Math.min(100,(x-lo)/(hi-lo)*100)),t=st&&st[k];
+  const dec=k=="og"||k=="fg"?3:k=="abv"?1:0,fmt=x=>(+x).toFixed(dec);
+  let cls="n",note="";
+  if(t){cls=v>=t[0]&&v<=t[1]?"":"w";note=cls?(v<t[0]?" ↓ low":" ↑ high"):" ✓"}
+  return `<div><div class=gh><span>${LBL[k]}</span><b class="${cls}">${fmt(v)}${k=="abv"?"%":""}${note}</b></div>
+  <div class=track ${k=="srm"?`style="background:${trackBg}"`:""}>${t?`<i class=band style="left:${p(t[0])}%;width:${p(t[1])-p(t[0])}%"></i>`:""}<i class=needle style="left:${p(v)}%"></i></div>
+  <div class=gs><span>${fmt(lo)}</span><span>${t?`target ${fmt(t[0])} – ${fmt(t[1])}`:""}</span><span>${fmt(hi)}</span></div></div>`}).join("");
+ $("plan").innerHTML=[["mash_gal","Mash water"],["sparge_gal","Sparge / top-up"],["pre_boil_gal","Pre-boil volume"],["boil_off_gal","Boil-off"]].map(([k,l])=>`<div class=metric><b>${unit(s[k]||0)}</b><span>${l}</span></div>`).join("");
+ $("capacity-status").className=s.capacity_ok?"capacity-ok":"capacity-warning";
+ $("capacity-status").textContent=s.capacity_ok?`✓ Pre-boil volume fits your ${unit(s.kettle_capacity_gal)} kettle with headspace.`:`⚠️ Pre-boil volume exceeds the safe 95% capacity of your ${unit(s.kettle_capacity_gal)} kettle. Reduce batch size or boil volume.`;
+ $("brewtype").textContent=`${r.type||"Beer"} · ${r.units=="metric"?((r.batch_gal||5)*3.78541).toFixed(1)+" L":(r.batch_gal||5)+" gal"} batch`;
+}
+
+function renderMash(){
+ const p=MASH_PROFILES[r.mash_profile]||MASH_PROFILES["Single infusion"];
+ $("mashprofile").innerHTML=Object.keys(MASH_PROFILES).map(x=>`<option ${x==r.mash_profile?"selected":""}>${x}</option>`).join("");
+ $("mashsteps").innerHTML=p.steps.map(([name,min,temp])=>`<div class=step><b>${min} min</b><span>${name}</span><small>${r.units=="metric"?Math.round((temp-32)*5/9)+"°C":temp+"°F"}</small></div>`).join("");
+ $("mashinfo").innerHTML=`<p class=sub>${p.steps.length} steps · ${p.steps.reduce((a,x)=>a+x[1],0)} minutes total</p>`;
+}
+function startMash(){const p=MASH_PROFILES[r.mash_profile]||MASH_PROFILES["Single infusion"];p.steps.forEach(([label,min])=>addT(label,min));}
+
+function renderEd(){
+ const shown=(k,v)=>r.units=="metric"&&k=="lb"?(v*.453592).toFixed(2):r.units=="metric"&&k=="oz"?(v*28.3495).toFixed(1):v;
+ const rows=(a,ks)=>r[a].map((o,i)=>`<div class=row>${ks.map(k=>`<input ${k=="name"?"class=n":"type=number step=any"} data-p="${a}.${i}.${k}" ${k=="lb"||k=="oz"?`data-unit="${k}"`:""} value="${shown(k,o[k])}" placeholder="${k}">`).join("")}<button class=x onclick="r.${a}.splice(${i},1);renderEd()">✕</button></div>`).join("");
+ const f=(k,l)=>`<label class=lbl>${l}<input type=number step=any data-p="${k}" ${k=="batch_gal"?"data-unit=volume":""} value="${k=="batch_gal"&&r.units=="metric"?(r[k]*3.78541).toFixed(1):r[k]}" style="width:80px"></label>`;
+ $("ed").innerHTML=`<h3>Recipe details</h3><div class=row><input class=n data-p=name value="${r.name}"></div>
+ <div class=icon-picker>${ICONS.map(i=>`<button class="${i==r.icon?"selected":""}" onclick="r.icon='${i}';renderEd()">${i}</button>`).join("")}</div>
+ <div class=row><label class=lbl>Fermentable type<select data-p=type><option ${r.type=="Beer"?"selected":""}>Beer</option><option ${r.type=="Cider"?"selected":""}>Cider</option><option ${r.type=="Seltzer"?"selected":""}>Seltzer</option></select></label>${f("batch_gal",r.units=="metric"?"Batch L":"Batch gal")}${f("efficiency","Eff %")}${f("attenuation","Atten %")}${f("boil_min","Boil min")}</div>
+ <h3 style="margin-top:14px">Grains · ${r.units=="metric"?"kg":"lb"} / ppg / °L</h3>${rows("grains",["name","lb","ppg","srm"])}<button class=g onclick="r.grains.push({name:'',lb:1,ppg:36,srm:2});renderEd()">+ grain</button>
+ <h3 style="margin-top:14px">Hops · ${r.units=="metric"?"g":"oz"} / α% / boil min</h3>${rows("hops",["name","oz","alpha","min"])}<button class=g onclick="r.hops.push({name:'',oz:1,alpha:5,min:15});renderEd()">+ hop</button>
+ <h3 style="margin-top:14px">Additives</h3><div class=additive-list>${r.additives.map((a,i)=>`<div class=additive-row>
+ <input class=add-name data-p="additives.${i}.name" value="${a.name||""}" placeholder="Additive">
+ <input class=add-amt type=number step=any data-p="additives.${i}.amount" value="${a.amount||""}" placeholder="Qty">
+ <select class=add-unit data-p="additives.${i}.unit">${["oz","lb","g","tsp","tablet","each"].map(u=>`<option ${u==a.unit?"selected":""}>${u}</option>`).join("")}</select>
+ <select class=add-timing data-p="additives.${i}.timing">${["Mash","Boil","15 min","10 min","Flameout","Whirlpool","Fermentation","Packaging"].map(u=>`<option ${u==a.timing?"selected":""}>${u}</option>`).join("")}</select>
+ <label title="Counts toward OG"><input type=checkbox data-p="additives.${i}.fermentable" ${a.fermentable?"checked":""}> fermentable</label>
+ <button class=x onclick="r.additives.splice(${i},1);renderEd()">✕</button></div>`).join("")}</div>
+ <div class=row><select id=additive-preset style="flex:1">${ADDITIVES.map((a,i)=>`<option value="${i}">${a.name}</option>`).join("")}</select><button class=g onclick=addAdditive()>+ add</button></div>
+ <h3 style="margin-top:14px">Yeast / culture</h3><div class=row><input class=n data-p=yeast value="${r.yeast}"></div>
+ <h3 style="margin-top:14px">Notes</h3><textarea rows=5 data-p=notes style="width:100%">${r.notes||""}</textarea>`;
+ $("style").innerHTML=Object.keys(STYLES).map(n=>`<option ${n==r.style?"selected":""}>${n}</option>`).join("");
+ document.querySelectorAll("[data-p^='equipment.']").forEach(e=>{const k=e.dataset.p.split(".")[1];e.value=r.equipment&&r.equipment[k]!=null?r.equipment[k]:""});
+ renderEquipment();
+ $("units").value=r.units||"us";renderMash();
+ calc()}
+document.addEventListener("change",e=>{const p=e.target.dataset.p;if(!p)return;const ks=p.split("."),last=ks.pop();
+ let o=r;ks.forEach(k=>o=o[k]);let value=e.target.type=="checkbox"?e.target.checked:e.target.type=="number"?+e.target.value:e.target.value;
+ if(e.target.dataset.unit=="volume"&&r.units=="metric")value/=3.78541;
+ if(e.target.dataset.unit=="lb"&&r.units=="metric")value/=.453592;
+ if(e.target.dataset.unit=="oz"&&r.units=="metric")value/=28.3495;
+ o[last]=value;if(p.indexOf("equipment.")===0)renderEquipment();calc()});
+function addAdditive(){
+ const a=ADDITIVES[+$("additive-preset").value];
+ r.additives.push({...a,amount:a.unit=="tablet"?1:a.unit=="g"?4:1,lb:a.ppg?((a.unit=="lb"?1:0)) : 0});
+ renderEd();
+}
+async function calc(){draw(await api("calc","POST",r))}
+
+async function loadHops(){
+ hops=await api("hops");
+ $("hopcatalog").innerHTML=hops.map(h=>`<div class=catalog-row><span>${h.name}</span><small>${h.alpha}%</small><button class=x onclick="editHop(${h.id})">✎</button><button class=x onclick="deleteHop(${h.id})">✕</button></div>`).join("");
+}
+async function saveHop(id){
+ const old=id?hops.find(x=>x.id==id):null;
+ const name=id?prompt("Hop name",old.name):$("hn").value.trim();
+ const alpha=id?prompt("Default alpha acid %",old.alpha):$("ha").value;
+ if(!name||alpha==="")return;
+ await api("hops","POST",{id,name,alpha:+alpha,notes:old?old.notes:""});$("hn").value="";$("ha").value="";loadHops();
+}
+function editHop(id){saveHop(id)}
+async function deleteHop(id){if(confirm("Delete this hop from the catalog?")){await api("hops/"+id,"DELETE");loadHops()}}
+async function refresh(){recs=await api("recipes");$("saved").innerHTML="<option value=''>Saved recipes…</option>"+recs.map(x=>`<option value=${x.id}>${x.name}</option>`).join("")}
+function load(){const x=recs.find(x=>x.id==$("saved").value);if(x){r={...blank(),...JSON.parse(JSON.stringify(x))};renderEd()}}
+function newR(){r=blank();renderEd()}
+async function save(){const x=await api("recipes","POST",r);r.id=x.id;await refresh();$("saved").value=r.id}
+async function del(){if(r.id&&confirm("Delete this recipe?")){await api("recipes/"+r.id,"DELETE");newR();refresh()}}
+async function ai(){const st=STYLES[r.style];let p=$("aip").value.trim();if(!p&&!st)return;
+ if(st)p+=` Target style: ${r.style} — OG ${st.og.join("-")}, FG ${st.fg.join("-")}, ABV ${st.abv.join("-")}%, IBU ${st.ibu.join("-")}, SRM ${st.srm.join("-")}.`;
+ $("aistat").textContent="brewing ideas…";try{const x=await api("ai","POST",{prompt:p});delete x.stats;r={...blank(),...x,style:r.style};renderEd();$("aistat").textContent="done · numbers verified by calculator"}catch(e){$("aistat").textContent="failed — check ANTHROPIC_API_KEY"}}
+
+/* timers */
+$("chips").innerHTML=[["Mash",60],["Boil",60],["Hops @15",15],["Hops @5",5],["Whirlpool",20]].map(([l,m])=>`<button class=g onclick="addT('${l}',${m})">${l} ${m}m</button>`).join("");
+async function addT(l,m){await api("timers","POST",{label:l||$("tl").value||"Timer",minutes:m||+$("tm").value});tick()}
+let skew=0,ts=[];const done=new Set();
+async function tick(){const d=await api("timers");skew=d.now-Date.now()/1000;ts=d.timers}
+setInterval(tick,15000);try{Notification.requestPermission()}catch(e){}
+setInterval(()=>{$("tlist").innerHTML=ts.map(t=>{const s=Math.round(t.end_ts-(Date.now()/1000+skew));
+ if(s<=0&&!done.has(t.id)){done.add(t.id);try{new Notification("Timer done: "+t.label)}catch(e){}}
+ return `<div class=trow><span class="time ${s<=0?"d":""}">${s>0?Math.floor(s/60)+":"+String(s%60).padStart(2,"0"):"DONE ✓"}</span><span class=l>${t.label}</span><button class=x onclick="api('timers/${t.id}','DELETE').then(tick)">✕</button></div>`}).join("")},500);
+refresh();renderEd();tick();loadHops();
+</script>
