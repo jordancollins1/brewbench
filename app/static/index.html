@@ -44,6 +44,7 @@ button.g{background:#213336;color:var(--tx);border:1px solid var(--line)}button.
 .schedule{display:grid;gap:4px;margin:10px 0}.schedule-row{display:flex;gap:10px;align-items:center;padding:8px 10px;background:#102023;border:1px solid var(--line);border-radius:9px}.schedule-row b{min-width:52px;color:var(--gold)}.schedule-row span{flex:1}.schedule-row small{color:var(--mut)}
 .library-card{border-color:#3a5552}.library-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.library-grid label{font-size:11px;color:var(--mut);display:grid;gap:4px}.ingredient-kind{color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px}
 .quick-nav{display:flex;gap:7px;flex-wrap:wrap;margin:-6px 0 18px}.quick-nav button{background:#1b3032;color:var(--tx);border:1px solid var(--line);font-size:12px;padding:7px 10px}
+.batch-editor{display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-top:12px}.batch-editor label{display:grid;gap:5px;font-size:11px;color:var(--mut)}.batch-editor input{font-size:18px;font-weight:700;width:130px;color:var(--blue)}.batch-editor select{min-width:150px}
 @media(max-width:700px){main{padding:16px 12px 32px}.plan{grid-template-columns:1fr 1fr}}
 </style>
 <main>
@@ -60,7 +61,9 @@ button.g{background:#213336;color:var(--tx);border:1px solid var(--line)}button.
  </div>
 </div>
 
-<div class="card" id=brew-plan><div class=section-head><div><h2>Brew plan</h2><p>Water and process volumes calculated from your equipment profile.</p></div><span class=eyebrow id=brewtype></span></div><div class=plan id=plan></div><div id=capacity-status></div><div id=grain-status></div></div>
+<div class="card" id=brew-plan><div class=section-head><div><h2>Brew plan</h2><p>Choose your target batch first. Equipment capacity is separate from the amount you want to make.</p>
+ <div class=batch-editor><label>How much are you making?<input id=batch-size type=number min=.25 step=.25></label><label>Batch preset<select id=batch-preset onchange=applyBatchPreset()><option value="">Custom batch size</option><option value=1>1 gal test batch</option><option value=2.5>2.5 gal batch</option><option value=5>5 gal batch</option><option value=10>10 gal batch</option><option value=15>15 gal batch</option></select></label><button class=g onclick=applyBatchSize()>Update batch</button></div>
+ </div><span class=eyebrow id=brewtype></span></div><div class=plan id=plan></div><div id=capacity-status></div><div id=grain-status></div></div>
 
 <div class=card><h3>✨ AI recipe builder</h3><div class=row>
  <input id=aip class=n placeholder="e.g. smooth chocolatey brown ale, 5 gal, ~6% ABV, 35 IBU (uses the style target above)">
@@ -240,8 +243,12 @@ function draw(s){
  $("capacity-status").textContent=s.capacity_ok?`✓ Pre-boil volume fits your ${unit(s.kettle_capacity_gal)} kettle with headspace.`:`⚠️ Pre-boil volume exceeds the safe 95% capacity of your ${unit(s.kettle_capacity_gal)} kettle. Reduce batch size or boil volume.`;
  $("grain-status").className=s.grain_capacity_ok?"capacity-ok":"capacity-warning";
  $("grain-status").textContent=s.grain_capacity_ok?`✓ Grain bill fits the equipment recommendation of ${mass(s.max_grain_lb)}.`:`⚠️ Grain bill exceeds the equipment recommendation of ${mass(s.max_grain_lb)}. Consider a smaller batch or a partial mash.`;
+ $("batch-size").value=r.units=="metric"?((r.batch_gal||5)*3.78541).toFixed(1):(r.batch_gal||5);
+ $("batch-preset").value=["1","2.5","5","10","15"].indexOf(String(r.batch_gal))>=0?String(r.batch_gal):"";
  $("brewtype").textContent=`${r.type||"Beer"} · ${r.units=="metric"?((r.batch_gal||5)*3.78541).toFixed(1)+" L":(r.batch_gal||5)+" gal"} batch`;
 }
+function applyBatchPreset(){if($("batch-preset").value){$("batch-size").value=r.units=="metric"?((+$("batch-preset").value)*3.78541).toFixed(1):$("batch-preset").value;applyBatchSize()}}
+function applyBatchSize(){const value=+$("batch-size").value||0;if(value<=0)return;r.batch_gal=r.units=="metric"?value/3.78541:value;calc()}
 
 function renderMash(){
  const p=MASH_PROFILES[r.mash_profile]||MASH_PROFILES["Single infusion"];
