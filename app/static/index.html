@@ -38,7 +38,7 @@ button.g{background:#213336;color:var(--tx);border:1px solid var(--line)}button.
 .icon-picker{display:flex;gap:6px;flex-wrap:wrap}.icon-picker button{font-size:21px;padding:5px 9px;background:#102023;border:1px solid var(--line)}.icon-picker button.selected{border-color:var(--gold);background:#314238}
 .catalog{display:grid;grid-template-columns:1fr 1fr;gap:8px}.catalog-row{display:flex;align-items:center;gap:8px;padding:8px;background:#102023;border:1px solid var(--line);border-radius:10px}.catalog-row span:first-child{flex:1}.catalog-row small{color:var(--mut)}
 .step{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}.step b{color:var(--gold);min-width:52px}.step span{flex:1}
-.equipment-note{font-size:12px;color:var(--mut);margin:4px 0 12px}
+.equipment-note{font-size:12px;color:var(--mut);margin:4px 0 12px}.equipment-limits{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.limit{background:#102023;border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:11px;color:var(--mut)}.limit b{display:block;color:var(--blue);font-size:15px}
 .additive-list{display:grid;gap:6px}.additive-row{display:flex;gap:6px;align-items:center;border-top:1px solid var(--line);padding:7px 0}.additive-row input,.additive-row select{min-width:0}.additive-row .add-name{flex:1}.additive-row .add-amt{width:75px}.additive-row .add-unit{width:72px}.additive-row .add-timing{width:115px}
 .capacity-warning{font-size:12px;color:var(--red);margin:10px 0 0}.capacity-ok{font-size:12px;color:var(--green);margin:10px 0 0}
 .library-card{border-color:#3a5552}.library-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.library-grid label{font-size:11px;color:var(--mut);display:grid;gap:4px}.ingredient-kind{color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px}
@@ -59,7 +59,7 @@ button.g{background:#213336;color:var(--tx);border:1px solid var(--line)}button.
  </div>
 </div>
 
-<div class="card" id=brew-plan><div class=section-head><div><h2>Brew plan</h2><p>Water and process volumes calculated from your equipment profile.</p></div><span class=eyebrow id=brewtype></span></div><div class=plan id=plan></div><div id=capacity-status></div></div>
+<div class="card" id=brew-plan><div class=section-head><div><h2>Brew plan</h2><p>Water and process volumes calculated from your equipment profile.</p></div><span class=eyebrow id=brewtype></span></div><div class=plan id=plan></div><div id=capacity-status></div><div id=grain-status></div></div>
 
 <div class=card><h3>✨ AI recipe builder</h3><div class=row>
  <input id=aip class=n placeholder="e.g. smooth chocolatey brown ale, 5 gal, ~6% ABV, 35 IBU (uses the style target above)">
@@ -67,7 +67,7 @@ button.g{background:#213336;color:var(--tx);border:1px solid var(--line)}button.
 
 <div class="card equipment-card" id=equipment><h3>⚙ Equipment profile</h3><p class=sub>Select your system to load realistic defaults, then fine-tune them for your setup.</p>
   <div class=row><label class=lbl>Equipment preset<select id=equipment-preset onchange=applyEquipmentPreset() style="width:100%"></select></label></div>
-  <p class=equipment-note id=equipment-description></p>
+  <p class=equipment-note id=equipment-description></p><div class=equipment-limits id=equipment-limits></div>
   <div class=row><label class=lbl>System<select data-p=equipment.system style="width:100%"><option>BIAB kettle</option><option>3-vessel system</option><option>Extract + steeping</option><option>Electric all-in-one</option></select></label></div>
   <div class=row><label class=lbl>Kettle capacity<input type=number step=any data-p=equipment.kettle_gal value=8></label><label class=lbl>Boil-off / hour<input type=number step=any data-p=equipment.boil_off value=1></label></div>
   <div class=row><label class=lbl>Mash ratio (qt/lb)<input type=number step=any data-p=equipment.mash_ratio value=1.5></label><label class=lbl>Trub loss (gal)<input type=number step=any data-p=equipment.trub_loss value=.5></label></div>
@@ -165,6 +165,7 @@ const GRAINS=[
  {name:"Corn sugar",lb:1,ppg:46,srm:0}
 ];
 const EQUIPMENT={
+ "BrewZilla 3.1.1 35L":{system:"Electric all-in-one",kettle_gal:9.25,boil_off:.9,mash_ratio:1.5,trub_loss:.5,grain_absorption:.125,max_grain_lb:19.8,safe_fill:.9,description:"35 L BrewZilla Gen 3.1.1: about 9.25 gal vessel capacity, 19.8 lb recommended maximum grain bill, and a 90% safe-fill limit."},
  "BrewZilla Gen 4 35L":{system:"Electric all-in-one",kettle_gal:9.2,boil_off:.9,mash_ratio:1.5,trub_loss:.5,grain_absorption:.125,description:"35 L recirculating all-in-one system with a typical 0.9 gal/hour boil-off."},
  "BrewZilla Gen 4 65L":{system:"Electric all-in-one",kettle_gal:17.2,boil_off:1.2,mash_ratio:1.5,trub_loss:.75,grain_absorption:.125,description:"65 L recirculating all-in-one system for larger batches and high-gravity brews."},
  "Grainfather G30":{system:"Electric all-in-one",kettle_gal:8.0,boil_off:.9,mash_ratio:1.5,trub_loss:.5,grain_absorption:.125,description:"30 L all-in-one system with recirculation and overflow pipe."},
@@ -198,12 +199,15 @@ function renderEquipment(){
  $("equipment-preset").innerHTML=names.map(name=>`<option ${name==equipmentPreset()?"selected":""}>${name}</option>`).join("");
  const preset=EQUIPMENT[equipmentPreset()];
  $("equipment-description").textContent=preset?preset.description:"Custom profile. Adjust the values below for your hardware.";
+ const e=r.equipment||{};
+ $("equipment-limits").innerHTML=`<div class=limit><b>${unit(+e.kettle_gal||8)}</b>Kettle capacity</div><div class=limit><b>${mass(+e.max_grain_lb||15)}</b>Max grain bill</div><div class=limit><b>${unit((+e.kettle_gal||8)*(+e.safe_fill||.95))}</b>Safe pre-boil</div>`;
 }
 function applyEquipmentPreset(){
  const preset=EQUIPMENT[$("equipment-preset").value];
  if(!preset)return;
  r.equipment={...r.equipment,...preset};
  renderEd();
+  calc();
 }
 
 function glassSvg(c){return `<svg viewBox="0 0 120 210"><defs>
@@ -232,6 +236,8 @@ function draw(s){
  $("plan").innerHTML=[["mash_gal","Mash water"],["sparge_gal","Sparge / top-up"],["pre_boil_gal","Pre-boil volume"],["boil_off_gal","Boil-off"]].map(([k,l])=>`<div class=metric><b>${unit(s[k]||0)}</b><span>${l}</span></div>`).join("");
  $("capacity-status").className=s.capacity_ok?"capacity-ok":"capacity-warning";
  $("capacity-status").textContent=s.capacity_ok?`✓ Pre-boil volume fits your ${unit(s.kettle_capacity_gal)} kettle with headspace.`:`⚠️ Pre-boil volume exceeds the safe 95% capacity of your ${unit(s.kettle_capacity_gal)} kettle. Reduce batch size or boil volume.`;
+ $("grain-status").className=s.grain_capacity_ok?"capacity-ok":"capacity-warning";
+ $("grain-status").textContent=s.grain_capacity_ok?`✓ Grain bill fits the equipment recommendation of ${mass(s.max_grain_lb)}.`:`⚠️ Grain bill exceeds the equipment recommendation of ${mass(s.max_grain_lb)}. Consider a smaller batch or a partial mash.`;
  $("brewtype").textContent=`${r.type||"Beer"} · ${r.units=="metric"?((r.batch_gal||5)*3.78541).toFixed(1)+" L":(r.batch_gal||5)+" gal"} batch`;
 }
 

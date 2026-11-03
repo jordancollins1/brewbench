@@ -37,6 +37,8 @@ def calc(r: dict) -> dict:
     pre_boil = vol + boil_off + trub
     sparge = max(0, pre_boil - mash_water + grain_total * grain_absorption)
     kettle_capacity = float(eq.get("kettle_gal") or 8)
+    max_grain = float(eq.get("max_grain_lb") or 15)
+    safe_pre_boil = kettle_capacity * float(eq.get("safe_fill") or .95)
     pts = sum(float(g.get("lb") or 0) * float(g.get("ppg") or 0) for g in r.get("grains", []))
     def additive_lb(a: dict) -> float:
         amount = float(a.get("amount") or 0)
@@ -60,7 +62,9 @@ def calc(r: dict) -> dict:
     return {"og": round(og, 3), "fg": round(fg, 3), "abv": round(abv, 1), "ibu": round(ibu), "srm": round(srm, 1),
             "mash_gal": round(mash_water, 1), "sparge_gal": round(sparge, 1), "pre_boil_gal": round(pre_boil, 1),
             "boil_off_gal": round(boil_off, 1), "kettle_capacity_gal": round(kettle_capacity, 1),
-            "capacity_ok": pre_boil <= kettle_capacity * .95}
+            "max_grain_lb": round(max_grain, 1), "safe_pre_boil_gal": round(safe_pre_boil, 1),
+            "capacity_ok": pre_boil <= safe_pre_boil,
+            "grain_capacity_ok": grain_total <= max_grain}
 
 @app.post("/api/calc", dependencies=[Depends(auth)])
 def api_calc(r: dict): return calc(r)
