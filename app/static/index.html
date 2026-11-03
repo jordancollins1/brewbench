@@ -41,12 +41,15 @@ button.g{background:#213336;color:var(--tx);border:1px solid var(--line)}button.
 .equipment-note{font-size:12px;color:var(--mut);margin:4px 0 12px}
 .additive-list{display:grid;gap:6px}.additive-row{display:flex;gap:6px;align-items:center;border-top:1px solid var(--line);padding:7px 0}.additive-row input,.additive-row select{min-width:0}.additive-row .add-name{flex:1}.additive-row .add-amt{width:75px}.additive-row .add-unit{width:72px}.additive-row .add-timing{width:115px}
 .capacity-warning{font-size:12px;color:var(--red);margin:10px 0 0}.capacity-ok{font-size:12px;color:var(--green);margin:10px 0 0}
+.library-card{border-color:#3a5552}.library-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.library-grid label{font-size:11px;color:var(--mut);display:grid;gap:4px}.ingredient-kind{color:var(--gold);font-size:10px;text-transform:uppercase;letter-spacing:1px}
+.quick-nav{display:flex;gap:7px;flex-wrap:wrap;margin:-6px 0 18px}.quick-nav button{background:#1b3032;color:var(--tx);border:1px solid var(--line);font-size:12px;padding:7px 10px}
 @media(max-width:700px){main{padding:16px 12px 32px}.plan{grid-template-columns:1fr 1fr}}
 </style>
 <main>
 <header><h1>🍺 Brew<span>Bench</span></h1><select id=saved onchange=load()></select>
 <select id=units onchange="r.units=this.value;renderEd()"><option value="us">US units</option><option value="metric">Metric</option></select>
 <button class=g onclick=newR()>New</button><button onclick=save()>Save</button><button class=g onclick=del()>Delete</button></header>
+<nav class=quick-nav><button onclick=jump('brew-plan')>📊 Brew plan</button><button onclick=jump('equipment')>⚙ Equipment</button><button onclick=jump('ingredients')>🌾 Ingredients</button><button onclick=jump('timers')>⏱ Timers</button><button onclick=jump('hop-catalog')>🌿 Hop catalog</button></nav>
 
 <div class="card hero">
  <div class=glass><div id=glass></div><div class=cname><b id=iconname></b><b id=cn></b><span id=chex></span></div></div>
@@ -56,13 +59,13 @@ button.g{background:#213336;color:var(--tx);border:1px solid var(--line)}button.
  </div>
 </div>
 
-<div class="card"><div class=section-head><div><h2>Brew plan</h2><p>Water and process volumes calculated from your equipment profile.</p></div><span class=eyebrow id=brewtype></span></div><div class=plan id=plan></div><div id=capacity-status></div></div>
+<div class="card" id=brew-plan><div class=section-head><div><h2>Brew plan</h2><p>Water and process volumes calculated from your equipment profile.</p></div><span class=eyebrow id=brewtype></span></div><div class=plan id=plan></div><div id=capacity-status></div></div>
 
 <div class=card><h3>✨ AI recipe builder</h3><div class=row>
  <input id=aip class=n placeholder="e.g. smooth chocolatey brown ale, 5 gal, ~6% ABV, 35 IBU (uses the style target above)">
  <button onclick=ai()>Build recipe</button><span id=aistat style="color:var(--mut)"></span></div></div>
 
-<div class="card equipment-card"><h3>⚙ Equipment profile</h3><p class=sub>Select your system to load realistic defaults, then fine-tune them for your setup.</p>
+<div class="card equipment-card" id=equipment><h3>⚙ Equipment profile</h3><p class=sub>Select your system to load realistic defaults, then fine-tune them for your setup.</p>
   <div class=row><label class=lbl>Equipment preset<select id=equipment-preset onchange=applyEquipmentPreset() style="width:100%"></select></label></div>
   <p class=equipment-note id=equipment-description></p>
   <div class=row><label class=lbl>System<select data-p=equipment.system style="width:100%"><option>BIAB kettle</option><option>3-vessel system</option><option>Extract + steeping</option><option>Electric all-in-one</option></select></label></div>
@@ -70,16 +73,29 @@ button.g{background:#213336;color:var(--tx);border:1px solid var(--line)}button.
   <div class=row><label class=lbl>Mash ratio (qt/lb)<input type=number step=any data-p=equipment.mash_ratio value=1.5></label><label class=lbl>Trub loss (gal)<input type=number step=any data-p=equipment.trub_loss value=.5></label></div>
   <div class=row><label class=lbl>Grain absorption (gal/lb)<input type=number step=any data-p=equipment.grain_absorption value=.125></label></div>
 </div>
+<div class="card library-card" id=ingredients><div class=section-head><div><h2>Ingredient library</h2><p>Choose a category, define when it goes in, or create your own ingredient.</p></div><span class=ingredient-kind>BeerSmith-style</span></div>
+ <div class=library-grid>
+  <label>Category<select id=custom-kind><option value=grain>Grain / fermentable</option><option value=hop>Hop</option><option value=additive>Fermentable</option><option value=misc>Miscellaneous</option></select></label>
+  <label>Name<input id=custom-name placeholder="e.g. Flaked rye"></label>
+  <label>Amount<input id=custom-amount type=number step=any placeholder="1"></label>
+  <label>Unit<select id=custom-unit><option>lb</option><option>oz</option><option>g</option><option>kg</option><option>tsp</option><option>tablet</option><option>each</option></select></label>
+  <label>When to add<select id=custom-timing><option>Mash</option><option>Boil</option><option>Whirlpool</option><option>Flameout</option><option>Fermentation</option><option>Bottling</option><option>Packaging</option></select></label>
+  <label>Potential (ppg)<input id=custom-ppg type=number step=any placeholder="0 if not fermentable"></label>
+  <label>Color (°L)<input id=custom-srm type=number step=any placeholder="0 if not grain"></label>
+  <label>Alpha acid %<input id=custom-alpha type=number step=any placeholder="only for hops"></label>
+ </div>
+ <div class=row><button onclick=addCustomIngredient()>Add custom ingredient</button><span id=custom-status class=sub></span></div>
+</div>
 <div class=two>
  <div class=card id=ed></div>
- <div class=card><h3>⏱ Brew-day timers</h3>
+ <div class=card id=timers><h3>⏱ Brew-day timers</h3>
   <div id=mashsteps></div><button class=g onclick=startMash()>Start mash profile</button>
   <div class=chips id=chips></div>
   <div class=row><input id=tl class=n placeholder="Label"><input id=tm type=number placeholder="min"><button onclick=addT()>Start</button></div>
   <div id=tlist></div></div>
 </div>
 <div class=two>
- <div class=card><h3>🌿 Hop catalog</h3><p class=sub>Defaults are editable and are used when adding hops to recipes.</p><div class=catalog id=hopcatalog></div>
+ <div class=card id=hop-catalog><h3>🌿 Hop catalog</h3><p class=sub>Defaults are editable and are used when adding hops to recipes.</p><div class=catalog id=hopcatalog></div>
   <div class=row><input id=hn class=n placeholder="New hop name"><input id=ha type=number step=any placeholder="α%"><button onclick=saveHop()>Add hop</button></div>
  </div>
  <div class=card><h3>🥣 Mash profile</h3><p class=sub>Choose a profile that matches your equipment. Steps generate timers.</p><select id=mashprofile onchange="r.mash_profile=this.value;renderMash()" style="width:100%"></select><div id=mashinfo></div></div>
@@ -104,7 +120,13 @@ const STYLES={
 "Robust Porter":{og:[1.048,1.065],fg:[1.012,1.016],abv:[4.8,6.5],ibu:[25,50],srm:[22,40]},
 "Dry Irish Stout":{og:[1.036,1.044],fg:[1.007,1.011],abv:[4,4.5],ibu:[25,45],srm:[25,40]},
 "Belgian Tripel":{og:[1.075,1.085],fg:[1.008,1.014],abv:[7.5,9.5],ibu:[20,40],srm:[4.5,7]},
-"Imperial Stout":{og:[1.075,1.115],fg:[1.018,1.030],abv:[8,12],ibu:[50,90],srm:[30,40]}};
+"Imperial Stout":{og:[1.075,1.115],fg:[1.018,1.030],abv:[8,12],ibu:[50,90],srm:[30,40]},
+"Cider - Dry":{og:[1.045,1.070],fg:[0.995,1.005],abv:[5,8],ibu:[0,5],srm:[1,4]},
+"Cider - Sweet":{og:[1.045,1.070],fg:[1.010,1.025],abv:[5,8],ibu:[0,5],srm:[2,8]},
+"Cider - Fruit":{og:[1.040,1.070],fg:[1.000,1.015],abv:[4,8],ibu:[0,5],srm:[2,12]},
+"Seltzer - Dry":{og:[1.035,1.055],fg:[0.995,1.002],abv:[4,7],ibu:[0,2],srm:[0,1]},
+"Seltzer - Fruit":{og:[1.035,1.060],fg:[0.998,1.008],abv:[4,8],ibu:[0,2],srm:[1,4]},
+"Seltzer - Sweet":{og:[1.035,1.060],fg:[1.005,1.015],abv:[4,8],ibu:[0,2],srm:[1,5]}};
 const SCALE={og:[1.030,1.120],fg:[1.000,1.035],abv:[0,12],ibu:[0,100],srm:[0,40]};
 const LBL={og:"Original gravity",fg:"Final gravity",abv:"ABV %",ibu:"Bitterness (IBU)",srm:"Color (SRM)"};
 const SRMHEX="FFE699 FFD878 FFCA5A FFBF42 FBB123 F8A600 F39C00 EA8F00 E58500 DE7C00 D77200 CF6900 CB6200 C35900 BB5100 B54C00 B04500 A63E00 A13700 9B3200 952D00 8E2900 882300 821E00 7B1A00 771900 701400 6A0E00 660D00 5E0B00 5A0A02 560A05 520907 4C0505 470606 440607 3F0708 3B0607 3A070B 36080A".split(" ");
@@ -133,6 +155,15 @@ const ADDITIVES=[
  {name:"Irish moss",unit:"tsp",ppg:0,fermentable:false,timing:"15 min"},
  {name:"Pectic enzyme",unit:"tsp",ppg:0,fermentable:false,timing:"Fermentation"}
 ];
+const GRAINS=[
+ {name:"Pale 2-row",lb:10,ppg:37,srm:2},{name:"Pilsner malt",lb:10,ppg:38,srm:2},
+ {name:"Maris Otter",lb:10,ppg:37,srm:3},{name:"Wheat malt",lb:5,ppg:38,srm:2},
+ {name:"Munich malt",lb:5,ppg:37,srm:9},{name:"Vienna malt",lb:5,ppg:37,srm:4},
+ {name:"Crystal 20L",lb:1,ppg:34,srm:20},{name:"Crystal 60L",lb:1,ppg:34,srm:60},
+ {name:"Chocolate malt",lb:1,ppg:28,srm:350},{name:"Roasted barley",lb:1,ppg:25,srm:500},
+ {name:"Flaked oats",lb:1,ppg:33,srm:2},{name:"Flaked rye",lb:1,ppg:35,srm:3},
+ {name:"Corn sugar",lb:1,ppg:46,srm:0}
+];
 const EQUIPMENT={
  "BrewZilla Gen 4 35L":{system:"Electric all-in-one",kettle_gal:9.2,boil_off:.9,mash_ratio:1.5,trub_loss:.5,grain_absorption:.125,description:"35 L recirculating all-in-one system with a typical 0.9 gal/hour boil-off."},
  "BrewZilla Gen 4 65L":{system:"Electric all-in-one",kettle_gal:17.2,boil_off:1.2,mash_ratio:1.5,trub_loss:.75,grain_absorption:.125,description:"65 L recirculating all-in-one system for larger batches and high-gravity brews."},
@@ -150,11 +181,12 @@ const MASH_PROFILES={
  "High attenuation":{steps:[["Mash in",10,145],["Beta-amylase rest",30,145],["Alpha-amylase rest",30,158],["Mash out",10,168]]},
  "Step mash":{steps:[["Protein rest",20,122],["Beta-amylase rest",30,145],["Saccharification rest",30,158],["Mash out",10,168]]}
 };
-const blank=()=>({name:"New recipe",style:"— No style target —",icon:"🍺",type:"Beer",units:"us",mash_profile:"Single infusion",batch_gal:5,efficiency:72,attenuation:75,boil_min:60,grains:[{name:"Pale 2-row",lb:10,ppg:37,srm:2}],hops:[{name:"Cascade",oz:1,alpha:5.5,min:60}],additives:[],yeast:"US-05",notes:"",equipment:{system:"BIAB kettle",kettle_gal:8,boil_off:1,mash_ratio:1.5,trub_loss:.5,grain_absorption:.125}});
+const blank=()=>({name:"New recipe",style:"— No style target —",icon:"🍺",type:"Beer",units:"us",mash_profile:"Single infusion",batch_gal:5,efficiency:72,attenuation:75,boil_min:60,grains:[{name:"Pale 2-row",lb:10,ppg:37,srm:2}],hops:[{name:"Cascade",oz:1,alpha:5.5,min:60,timing:"Boil"}],additives:[],yeast:"US-05",notes:"",equipment:{system:"BIAB kettle",kettle_gal:8,boil_off:1,mash_ratio:1.5,trub_loss:.5,grain_absorption:.125}});
 let r=blank(),recs=[];
 let hops=[];
 const unit=x=>r.units=="metric"?`${(x*3.78541).toFixed(1)} L`:`${x.toFixed(1)} gal`;
 const mass=(x)=>r.units=="metric"?`${(x*.453592).toFixed(2)} kg`:`${x.toFixed(2)} lb`;
+function jump(id){$(id).scrollIntoView({behavior:"smooth",block:"start"})}
 function equipmentPreset(){
  return Object.keys(EQUIPMENT).find(name=>{
   const p=EQUIPMENT[name],e=r.equipment||{};
@@ -213,13 +245,13 @@ function startMash(){const p=MASH_PROFILES[r.mash_profile]||MASH_PROFILES["Singl
 
 function renderEd(){
  const shown=(k,v)=>r.units=="metric"&&k=="lb"?(v*.453592).toFixed(2):r.units=="metric"&&k=="oz"?(v*28.3495).toFixed(1):v;
- const rows=(a,ks)=>r[a].map((o,i)=>`<div class=row>${ks.map(k=>`<input ${k=="name"?"class=n":"type=number step=any"} data-p="${a}.${i}.${k}" ${k=="lb"||k=="oz"?`data-unit="${k}"`:""} value="${shown(k,o[k])}" placeholder="${k}">`).join("")}<button class=x onclick="r.${a}.splice(${i},1);renderEd()">✕</button></div>`).join("");
+ const rows=(a,ks)=>r[a].map((o,i)=>`<div class=row>${ks.map(k=>`<input ${k=="name"||k=="timing"?"class=n":"type=number step=any"} data-p="${a}.${i}.${k}" ${k=="lb"||k=="oz"?`data-unit="${k}"`:""} value="${shown(k,o[k]||"")}" placeholder="${k}">`).join("")}<button class=x onclick="r.${a}.splice(${i},1);renderEd()">✕</button></div>`).join("");
  const f=(k,l)=>`<label class=lbl>${l}<input type=number step=any data-p="${k}" ${k=="batch_gal"?"data-unit=volume":""} value="${k=="batch_gal"&&r.units=="metric"?(r[k]*3.78541).toFixed(1):r[k]}" style="width:80px"></label>`;
  $("ed").innerHTML=`<h3>Recipe details</h3><div class=row><input class=n data-p=name value="${r.name}"></div>
  <div class=icon-picker>${ICONS.map(i=>`<button class="${i==r.icon?"selected":""}" onclick="r.icon='${i}';renderEd()">${i}</button>`).join("")}</div>
- <div class=row><label class=lbl>Fermentable type<select data-p=type><option ${r.type=="Beer"?"selected":""}>Beer</option><option ${r.type=="Cider"?"selected":""}>Cider</option><option ${r.type=="Seltzer"?"selected":""}>Seltzer</option></select></label>${f("batch_gal",r.units=="metric"?"Batch L":"Batch gal")}${f("efficiency","Eff %")}${f("attenuation","Atten %")}${f("boil_min","Boil min")}</div>
- <h3 style="margin-top:14px">Grains · ${r.units=="metric"?"kg":"lb"} / ppg / °L</h3>${rows("grains",["name","lb","ppg","srm"])}<button class=g onclick="r.grains.push({name:'',lb:1,ppg:36,srm:2});renderEd()">+ grain</button>
- <h3 style="margin-top:14px">Hops · ${r.units=="metric"?"g":"oz"} / α% / boil min</h3>${rows("hops",["name","oz","alpha","min"])}<button class=g onclick="r.hops.push({name:'',oz:1,alpha:5,min:15});renderEd()">+ hop</button>
+ <div class=row><label class=lbl>Fermentable type<select data-p=type onchange="r.type=this.value;syncStyles();renderEd()"><option ${r.type=="Beer"?"selected":""}>Beer</option><option ${r.type=="Cider"?"selected":""}>Cider</option><option ${r.type=="Seltzer"?"selected":""}>Seltzer</option></select></label>${f("batch_gal",r.units=="metric"?"Batch L":"Batch gal")}${f("efficiency","Eff %")}${f("attenuation","Atten %")}${f("boil_min","Boil min")}</div>
+ <h3 style="margin-top:14px">Grains · ${r.units=="metric"?"kg":"lb"} / ppg / °L</h3><div class=row><select id=grain-preset style="flex:1">${GRAINS.map((g,i)=>`<option value="${i}">${g.name}</option>`).join("")}</select><button class=g onclick=addGrain()>+ grain</button></div>${rows("grains",["name","lb","ppg","srm","timing"])}
+ <h3 style="margin-top:14px">Hops · ${r.units=="metric"?"g":"oz"} / α% / min / timing</h3>${rows("hops",["name","oz","alpha","min","timing"])}<button class=g onclick="r.hops.push({name:'',oz:1,alpha:5,min:15,timing:'Boil'});renderEd()">+ hop</button>
  <h3 style="margin-top:14px">Additives</h3><div class=additive-list>${r.additives.map((a,i)=>`<div class=additive-row>
  <input class=add-name data-p="additives.${i}.name" value="${a.name||""}" placeholder="Additive">
  <input class=add-amt type=number step=any data-p="additives.${i}.amount" value="${a.amount||""}" placeholder="Qty">
@@ -230,11 +262,26 @@ function renderEd(){
  <div class=row><select id=additive-preset style="flex:1">${ADDITIVES.map((a,i)=>`<option value="${i}">${a.name}</option>`).join("")}</select><button class=g onclick=addAdditive()>+ add</button></div>
  <h3 style="margin-top:14px">Yeast / culture</h3><div class=row><input class=n data-p=yeast value="${r.yeast}"></div>
  <h3 style="margin-top:14px">Notes</h3><textarea rows=5 data-p=notes style="width:100%">${r.notes||""}</textarea>`;
- $("style").innerHTML=Object.keys(STYLES).map(n=>`<option ${n==r.style?"selected":""}>${n}</option>`).join("");
+ syncStyles();
  document.querySelectorAll("[data-p^='equipment.']").forEach(e=>{const k=e.dataset.p.split(".")[1];e.value=r.equipment&&r.equipment[k]!=null?r.equipment[k]:""});
  renderEquipment();
  $("units").value=r.units||"us";renderMash();
  calc()}
+function syncStyles(){
+ const names=Object.keys(STYLES).filter(name=>r.type=="Beer"?name.indexOf("Cider -")!==0&&name.indexOf("Seltzer -")!==0:name.indexOf(r.type+" -")===0);
+ $("style").innerHTML=Object.keys(STYLES).filter(name=>names.indexOf(name)>=0||name=="— No style target —").map(n=>`<option ${n==r.style?"selected":""}>${n}</option>`).join("");
+ if(names.indexOf(r.style)<0&&r.style!="— No style target —")r.style=names[0]||"— No style target —";
+}
+function addGrain(){const g=GRAINS[+$("grain-preset").value];r.grains.push({...g,timing:"Mash"});renderEd()}
+function addCustomIngredient(){
+ const kind=$("custom-kind").value,name=$("custom-name").value.trim(),amount=+$("custom-amount").value||0,unit=$("custom-unit").value,timing=$("custom-timing").value;
+ if(!name||!amount){$("custom-status").textContent="Enter a name and amount first.";return}
+ const ppg=+$("custom-ppg").value||0,srm=+$("custom-srm").value||0,alpha=+$("custom-alpha").value||0;
+ if(kind=="grain")r.grains.push({name,lb:unit=="kg"?amount*2.20462:unit=="lb"?amount:amount/453.592,ppg,srm,timing});
+ else if(kind=="hop")r.hops.push({name,oz:unit=="oz"?amount:amount/28.3495,alpha,min:timing=="Boil"?60:0,timing});
+ else r.additives.push({name,amount,unit,ppg,fermentable:kind=="additive"&&ppg>0,timing,lb:unit=="lb"?amount:0});
+ $("custom-status").textContent=`Added ${name} to ${kind}.`;$("custom-name").value="";$("custom-amount").value="";renderEd();
+}
 document.addEventListener("change",e=>{const p=e.target.dataset.p;if(!p)return;const ks=p.split("."),last=ks.pop();
  let o=r;ks.forEach(k=>o=o[k]);let value=e.target.type=="checkbox"?e.target.checked:e.target.type=="number"?+e.target.value:e.target.value;
  if(e.target.dataset.unit=="volume"&&r.units=="metric")value/=3.78541;

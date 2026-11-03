@@ -41,7 +41,7 @@ def calc(r: dict) -> dict:
     def additive_lb(a: dict) -> float:
         amount = float(a.get("amount") or 0)
         unit = a.get("unit", "lb")
-        return {"oz": amount / 16, "g": amount / 453.592}.get(unit, amount if unit == "lb" else 0)
+        return {"oz": amount / 16, "g": amount / 453.592, "kg": amount * 2.20462}.get(unit, amount if unit == "lb" else 0)
 
     additive_pts = sum(additive_lb(a) * float(a.get("ppg") or 0)
                        for a in r.get("additives", []) if a.get("fermentable", True))
@@ -49,7 +49,11 @@ def calc(r: dict) -> dict:
     fg = 1 + (og - 1) * (1 - att)
     abv = (og - fg) * 131.25
     big = 1.65 * 0.000125 ** (og - 1)
-    ibu = sum(big * (1 - math.exp(-0.04 * h["min"])) / 4.15 * (h["alpha"] / 100 * h["oz"] * 7490 / vol)
+    def hop_oz(h: dict) -> float:
+        return float(h.get("oz") or 0) if h.get("unit", "oz") == "oz" else float(h.get("amount") or 0) / 28.3495
+
+    ibu = sum(big * (1 - math.exp(-0.04 * float(h.get("min") or 0))) / 4.15 *
+              (float(h.get("alpha") or 0) / 100 * hop_oz(h) * 7490 / vol)
               for h in r.get("hops", []))
     mcu = sum(g["lb"] * g["srm"] for g in r.get("grains", [])) / vol
     srm = 1.4922 * mcu ** 0.6859 if mcu > 0 else 0
