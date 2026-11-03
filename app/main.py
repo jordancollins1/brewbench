@@ -1,4 +1,5 @@
 import os, json, time, math, sqlite3, asyncio, re
+from pathlib import Path
 import httpx
 from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.staticfiles import StaticFiles
@@ -147,4 +148,5 @@ async def ai(req: dict):
         if text.strip() == msgs[-3]["content"].strip() if len(msgs) > 3 else False: break
     return {**rec, "stats": calc(rec)}
 
-app.mount("/", StaticFiles(directory="app/static", html=True))
+app.add_api_route("/api/health", lambda: {"status": "ok"}, methods=["GET"])
+app.mount("/", StaticFiles(directory=str(Path(__file__).resolve().parent / "static"), html=True))
